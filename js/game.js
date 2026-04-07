@@ -140,6 +140,8 @@ function handleKeyTap(e, m) {
     expectedNotes.forEach(t => highlightKey(t.m, 'ch'));
     
     // 记录弹错的那个音，用于在谱面上绘制显示
+    wrongNote = NOTES_DATA.find(n => n.m === m);
+    
     highlightKey(m, 'wh');
     expectedNotes.forEach(t => highlightKey(t.m, 'ch'));
     
