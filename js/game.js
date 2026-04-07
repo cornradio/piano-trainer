@@ -1,6 +1,7 @@
 // 游戏逻辑与状态管理
 let mode = 'rh';
 let gameDifficulty = 'easy'; // 新增的难度管理状态
+let includeAccid = true; // 是否包含升号
 let rightNote = null;
 let leftNote = null;
 let isDone = false;
@@ -40,18 +41,22 @@ function generateStage() {
     minLH = 48; maxLH = 84; // 三八度: C3 - C6
   }
 
-  if (mode === 'both') {
-    rightNote = pickNote(minRH, maxRH);
-    leftNote = pickNote(minLH, maxLH);
-    hint.textContent = '🎵 认出图中两个音，并在下方键盘弹出来';
-  } else if (mode === 'rh') {
-    rightNote = pickNote(minRH, maxRH);
+  // 过滤出符合音域和升号要求的备选音符
+  const candidatesRH = NOTES_DATA.filter(x => x.m >= minRH && x.m <= maxRH && (includeAccid || x.b === 0));
+  const candidatesLH = NOTES_DATA.filter(x => x.m >= minLH && x.m <= maxLH && (includeAccid || x.b === 0));
+
+  if (mode === 'rh') {
+    rightNote = candidatesRH[Math.floor(Math.random() * candidatesRH.length)];
     leftNote = null;
     hint.textContent = '🎵 认出高音谱表（右手）的这个音并弹出来';
-  } else {
-    leftNote = pickNote(minLH, maxLH);
+  } else if (mode === 'lh') {
+    leftNote = candidatesLH[Math.floor(Math.random() * candidatesLH.length)];
     rightNote = null;
     hint.textContent = '🎵 认出低音谱表（左手）的这个音并弹出来';
+  } else {
+    rightNote = candidatesRH[Math.floor(Math.random() * candidatesRH.length)];
+    leftNote = candidatesLH[Math.floor(Math.random() * candidatesLH.length)];
+    hint.textContent = '🎵 认出图中两个音，并在下方键盘弹出来';
   }
 
   renderCanvas();
@@ -109,7 +114,7 @@ function handleKeyTap(e, m) {
     fb.className = 'fb no';
     
     renderCanvas('no');
-    gameTimer = setTimeout(generateStage, 2400);
+    gameTimer = setTimeout(generateStage, 900); // 错误也只需等待一样短的时间
   }
   
   updateScoreUI();
@@ -131,11 +136,7 @@ function resetGame() {
   generateStage();
 }
 
-function setGameMode(newMode, diff) {
-  mode = newMode;
-  gameDifficulty = diff || gameDifficulty || 'easy';
-
-  // 根据难度重绘属于当前难度的键盘
+function getKeyboardRange() {
   let minK = 48, maxK = 84;
   if (gameDifficulty === 'easy') {
     if (mode === 'rh') { minK = 60; maxK = 72; }      // 右手：单八度
@@ -148,7 +149,19 @@ function setGameMode(newMode, diff) {
   } else {
     minK = 48; maxK = 84;                             // 三八度
   }
-  
-  initPiano(handleKeyTap, minK, maxK);
+  return { minK, maxK };
+}
+
+function setGameMode(newMode, diff) {
+  mode = newMode;
+  gameDifficulty = diff || gameDifficulty || 'easy';
+
+  const range = getKeyboardRange();
+  initPiano(handleKeyTap, range.minK, range.maxK);
+  resetGame();
+}
+
+function setAccidentals(val) {
+  includeAccid = val;
   resetGame();
 }

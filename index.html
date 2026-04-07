@@ -2,57 +2,67 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>🎹 钢琴识谱练习</title>
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-<h1>🎹 钢琴识谱练习</h1>
-<p class="sub">看五线谱 · 找到音 · 按琴键</p>
+<button id="ToggleMenuBtn">⚙️设置项</button>
 
-<!-- 难度切换 (Difficulty control) -->
-<div class="rb" id="DiffBox">
-  <button data-d="easy" class="on">🌱 单八度</button>
-  <button data-d="med">🌲 双八度</button>
-  <button data-d="hard">🔥 三八度</button>
+<div class="controls" id="ControlsMenu">
+  <h1>🎹 钢琴识谱练习</h1>
+  <p class="sub">看五线谱 · 找到音 · 按琴键</p>
+
+  <div id="midiStatus">🎹 等待 MIDI 设备连接...</div>
+
+  <div class="rb" id="DiffBox">
+    <button data-d="easy" class="on">🌱 单八度</button>
+    <button data-d="med">🌲 双八度</button>
+    <button data-d="hard">🔥 三八度</button>
+  </div>
+
+  <div class="rb" id="RB">
+    <button data-r="rh" class="on">🎵 右手 (高音)</button>
+    <button data-r="lh">🎵 左手 (低音)</button>
+    <button data-r="both">🎵 双手</button>
+  </div>
+
+  <div class="rb" id="SoundBox">
+    <button data-s="on" class="on">🔊 声音</button>
+    <button data-s="off">🔇 静音</button>
+  </div>
+
+  <div class="rb" id="AccidBox">
+    <button data-a="on" class="on">#️⃣ 含升降号</button>
+    <button data-a="off">⚪ 仅白键</button>
+  </div>
+
+  <div class="sc">
+    <div><div class="v" id="sOk">0</div><div class="l">✅ 正确</div></div>
+    <div><div class="v" id="sSt">0</div><div class="l">🔥 连对</div></div>
+    <div><div class="v" id="sAl">0</div><div class="l">🎯 已练</div></div>
+  </div>
+  
+  <button id="CloseMenuBtn" class="close-menu">⬅️ 隐藏面板</button>
 </div>
 
-<!-- 菜单切换 (Modules control) -->
-<div class="rb" id="RB">
-  <button data-r="rh" class="on">🎵 右手 (高音)</button>
-  <button data-r="lh">🎵 左手 (低音)</button>
-  <button data-r="both">🎵 双手</button>
+<div class="main-area">
+  <div class="fb" id="fb"></div>
+
+  <div class="sb">
+    <canvas id="S"></canvas>
+    <div class="hint" id="hint">🎵 点击琴键开始</div>
+  </div>
+
+  <div class="pw">
+    <div class="piano" id="PI"></div>
+  </div>
 </div>
 
-<!-- 声音开关 (Sound control) -->
-<div class="rb" id="SoundBox">
-  <button data-s="on" class="on">🔊 声音</button>
-  <button data-s="off">🔇 静音</button>
-</div>
-
-<!-- 分数面板 (Score board) -->
-<div class="sc">
-  <div><div class="v" id="sOk">0</div><div class="l">✅ 正确</div></div>
-  <div><div class="v" id="sSt">0</div><div class="l">🔥 连对</div></div>
-  <div><div class="v" id="sAl">0</div><div class="l">🎯 已练</div></div>
-</div>
-
-<!-- 乐谱显示区域 (Score drawing area) -->
-<div class="sb">
-  <canvas id="S"></canvas>
-  <div class="hint" id="hint">🎵 点击琴键开始</div>
-</div>
-
-<!-- 通知信息 (Feedback message) -->
-<div class="fb" id="fb"></div>
-
-<!-- 钢琴键盘模块 (Piano keyboard render area) -->
-<div class="pw"><div class="piano" id="PI"></div></div>
-
-<!-- 此处采用纯标签按顺序导入的方式保证可在 file:// 下运行。 -->
 <script src="js/config.js"></script>
 <script src="js/audio.js"></script>
+<script src="js/midi.js"></script>
 <script src="js/staff.js"></script>
 <script src="js/piano.js"></script>
 <script src="js/game.js"></script>

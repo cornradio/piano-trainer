@@ -1,11 +1,12 @@
 // 键盘渲染和事件监听
 const PI = document.getElementById('PI');
-const WK_W = 48, BK_W = 30;
 
 function initPiano(onKeyTap, minK = 48, maxK = 84) {
   if (!PI) return;
   PI.innerHTML = '';
-  // 根据传入的范围动态渲染键盘
+  
+  // 核心改动：不再依赖绝对像素进行位置测量，借助 Flexbox 让 CSS 引擎完美分配位置和自适应宽度
+
   const ns = NOTES_DATA.filter(x => x.m >= minK && x.m <= maxK);
   const w = ns.filter(x => !x.b);
   const k = ns.filter(x => x.b);
@@ -15,35 +16,30 @@ function initPiano(onKeyTap, minK = 48, maxK = 84) {
     d.className = 'wk'; 
     d.dataset.m = n.m;
     d.innerHTML = `<span class="lb">${n.n}</span>`;
-    d.addEventListener('pointerdown', (e) => onKeyTap(e, parseInt(n.m)));
-    PI.appendChild(d);
-  });
-
-  k.forEach(n => {
-    const base = n.n[0] + n.n.replace(/^[A-G]#/, '');
-    const wi = w.findIndex(x => x.n === base);
-    if (wi < 0) return;
     
-    const d = document.createElement('div');
-    d.className = 'bk'; 
-    d.dataset.m = n.m;
-    d.innerHTML = `<span class="lb">${n.n}</span>`;
-    d.addEventListener('pointerdown', (e) => onKeyTap(e, parseInt(n.m)));
-    
-    d.style.left = (wi * WK_W + WK_W * 0.65) + 'px';
-    d.style.top = '0';
-    PI.appendChild(d);
-  });
+    // 查找该白键右侧是否带有黑键
+    const hasBlack = k.find(bk => {
+      const base = bk.n[0] + bk.n.replace(/^[A-G]#/, '');
+      return base === n.n;
+    });
 
-  PI.style.width = (w.length * WK_W) + 'px';
-
-  // 稍微把滑条滚动到中间偏右一点，更贴近常见操作习惯
-  setTimeout(() => {
-    const pwBox = PI.parentElement;
-    if (pwBox) {
-      pwBox.scrollLeft = (pwBox.scrollWidth - pwBox.clientWidth) / 2;
+    if (hasBlack) {
+      const bD = document.createElement('div');
+      bD.className = 'bk';
+      bD.dataset.m = hasBlack.m;
+      bD.innerHTML = `<span class="lb">${hasBlack.n}</span>`;
+      
+      bD.addEventListener('pointerdown', (e) => {
+        e.stopPropagation(); // 阻止事件冒泡到白键
+        onKeyTap(e, parseInt(hasBlack.m));
+      });
+      
+      d.appendChild(bD);
     }
-  }, 100);
+    
+    d.addEventListener('pointerdown', (e) => onKeyTap(e, parseInt(n.m)));
+    PI.appendChild(d);
+  });
 }
 
 function clearPianoKeysClasses() {

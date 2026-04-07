@@ -5,6 +5,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // 1. 初始化钢琴键盘
   initPiano(handleKeyTap);
 
+  // 初始化物理 MIDI 键盘检测
+  initMIDI();
+
   // 2. 绑定难度切换
   document.getElementById('DiffBox').addEventListener('click', e => {
     const btn = e.target.closest('button');
@@ -46,11 +49,36 @@ document.addEventListener('DOMContentLoaded', () => {
     setGameMode(newMode, currentDifficulty);
   });
 
-  // 4. 开启第一局
+  // 4. 绑定升降号开关
+  document.getElementById('AccidBox').addEventListener('click', e => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    const val = btn.dataset.a;
+    setAccidentals(val === 'on');
+    e.currentTarget.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === btn));
+  });
+
+  // 5. 开启第一局
   setGameMode('rh', currentDifficulty);
 
-  // 5. 处理屏幕缩放、翻转时的重绘画布请求
+  // 5. 处理屏幕翻转和大小变化的画布重置
   window.addEventListener('resize', () => {
-    renderCanvas();
+    setTimeout(() => {
+       renderCanvas();
+    }, 150);
   });
+
+  // 6. 横屏设置菜单面板 Toggle
+  const toggleBtn = document.getElementById('ToggleMenuBtn');
+  const closeBtn = document.getElementById('CloseMenuBtn');
+  const controlsMenu = document.getElementById('ControlsMenu');
+  
+  if(toggleBtn && closeBtn && controlsMenu) {
+    toggleBtn.addEventListener('click', () => {
+      controlsMenu.classList.add('open');
+    });
+    closeBtn.addEventListener('click', () => {
+      controlsMenu.classList.remove('open');
+    });
+  }
 });
