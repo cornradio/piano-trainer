@@ -113,7 +113,15 @@ function drawStaffBase(ctx, ty, note, clef, W, noteColor, wrongNote = null, phan
 
 function drawStaffNote(ctx, note, ty, px, clef, noteColor, alpha = 1.0) {
   if (alpha < 1.0) ctx.globalAlpha = alpha; // 设置淡出透明度
-  const dy = clef === 't' ? note.td : note.bd;
+  
+  // 核心修复：根据当前是显示“升号”还是“降号”，决定符头画在哪个位置
+  let dy;
+  if (clef === 't') {
+    dy = note.useFlat ? (note.td_f !== undefined ? note.td_f : note.td) : (note.td_s !== undefined ? note.td_s : note.td);
+  } else {
+    dy = note.useFlat ? (note.bd_f !== undefined ? note.bd_f : note.bd) : (note.bd_s !== undefined ? note.bd_s : note.bd);
+  }
+  
   const y = ty + dy;
   const lw = 22; 
 
@@ -149,8 +157,10 @@ function drawStaffNote(ctx, note, ty, px, clef, noteColor, alpha = 1.0) {
     ctx.fillStyle = noteColor;
     ctx.font = 'bold 22px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
     const sw = ctx.measureText('♯').width;
-    // 井号只往左移，不改变符头原本所在的 nx 位置 (This prevents overlapping)
-    ctx.fillText('♯', px - sw - 8, y + 7);
+    // 井号/降号位置
+    const symbol = note.useFlat ? '♭' : '♯';
+    const offset = note.useFlat ? 5 : 8; // 降号稍微胖一点，偏置自适应
+    ctx.fillText(symbol, px - sw - offset, y + 7);
   }
 
   ctx.fillStyle = noteColor;

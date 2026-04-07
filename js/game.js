@@ -80,9 +80,24 @@ function generateStage() {
     hint.textContent = '🎵 请认出该音符在低音谱表上的位置并弹出';
   }
 
+  // 处理升降号显示逻辑：随机选择显示升号还是降号
+  if (rightNote && rightNote.b) {
+    rightNote.useFlat = Math.random() > 0.5;
+    rightNote.displayName = rightNote.useFlat ? rightNote.f : rightNote.s;
+  } else if (rightNote) {
+    rightNote.displayName = rightNote.n;
+  }
+  
+  if (leftNote && leftNote.b) {
+    leftNote.useFlat = Math.random() > 0.5;
+    leftNote.displayName = leftNote.useFlat ? leftNote.f : leftNote.s;
+  } else if (leftNote) {
+    leftNote.displayName = leftNote.n;
+  }
+
   // 渲染显示逻辑：为了防止离谱加线，如果是手动模式就强制显示大谱图，但即便如此，音符也只有一个单音！
   let renderMode = mode;
-  if (gameDifficulty === 'custom') renderMode = 'both';
+  if (gameDifficulty === 'custom' || gameDifficulty === 'free') renderMode = 'both';
 
   currentHits = []; // 重置当前已击中列表
 
@@ -91,11 +106,7 @@ function generateStage() {
   // 延迟一小小会儿产生出题声音，更贴近使用习惯
   setTimeout(() => {
     if (rightNote) playNoteSound(rightNote.m);
-    if (leftNote && !rightNote) playNoteSound(leftNote.m);
-    else if (leftNote && rightNote) {
-      // 若双手，左手稍作微小延迟播放以区分
-      setTimeout(() => playNoteSound(leftNote.m), 50);
-    }
+    if (leftNote) playNoteSound(leftNote.m);
   }, 100);
 }
 
@@ -129,9 +140,10 @@ function handleKeyTap(e, m) {
     expectedNotes.forEach(t => highlightKey(t.m, 'ch'));
     
     // 记录弹错的那个音，用于在谱面上绘制显示
-    wrongNote = NOTES_DATA.find(n => n.m === m);
+    highlightKey(m, 'wh');
+    expectedNotes.forEach(t => highlightKey(t.m, 'ch'));
     
-    fb.textContent = '❌ 弹错了，标准答案是 ' + expectedNotes.map(t => t.n).join(' 与 ');
+    fb.textContent = '❌ 弹错了，标准答案是 ' + expectedNotes.map(t => t.displayName).join(' 与 ');
     fb.className = 'fb no';
     renderCanvas('no');
     if (gameTimer) clearTimeout(gameTimer);
@@ -152,7 +164,7 @@ function handleKeyTap(e, m) {
       if (score.streak > score.maxStreak) score.maxStreak = score.streak;
       
       const msgs = ['✅ 正确！', '🎉 太棒了！', '✨ 漂亮！', '👏 完全正确！'];
-      fb.textContent = msgs[Math.floor(Math.random() * msgs.length)] + ' ' + expectedNotes.map(t => t.n).join(' ');
+      fb.textContent = msgs[Math.floor(Math.random() * msgs.length)] + ' ' + expectedNotes.map(t => t.displayName).join(' ');
       fb.className = 'fb ok';
       
       renderCanvas('ok');
