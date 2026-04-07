@@ -13,6 +13,10 @@ let customMin = 60;
 let customMax = 72;
 let gameTimer = null;
 
+// 自由模式专属：淡出虚影
+let activePhantoms = []; // [{note, alpha, x}]
+let phantomLoop = null;
+
 let score = { ok: 0, streak: 0, maxStreak: 0, total: 0 };
 
 const fb = document.getElementById('fb');
@@ -27,6 +31,17 @@ function pickNote(lo, hi) {
 }
 
 function generateStage() {
+  if (gameDifficulty === 'free') {
+    isDone = false;
+    wrongNote = null;
+    rightNote = null;
+    leftNote = null;
+    fb.textContent = '🎨 自由模式：随便乱弹，看着音符飞舞吧！';
+    fb.className = 'fb ok';
+    hint.textContent = '🎵 实时显示你的弹奏位置';
+    renderCanvas();
+    return;
+  }
   isDone = false;
   wrongNote = null; // 清空上一局的错误记录
   fb.textContent = '';
@@ -85,6 +100,18 @@ function generateStage() {
 }
 
 function handleKeyTap(e, m) {
+  playNoteSound(m);
+  
+  if (gameDifficulty === 'free') {
+    // 自由模式：只负责生成飞舞的虚影
+    const n = NOTES_DATA.find(x => x.m === m);
+    if (n) {
+      activePhantoms.push({ note: n, alpha: 0.8, x: 300 });
+      startPhantomLoop();
+    }
+    return;
+  }
+
   if (isDone) return;
   
   const expectedNotes = [rightNote, leftNote].filter(n => n !== null);
@@ -149,8 +176,26 @@ function updateScoreUI() {
 
 function renderCanvas(feedbackState = '') {
   let rm = mode;
-  if(gameDifficulty === 'custom') rm = 'both';
-  drawGameStaff(rm, rightNote, leftNote, isDone, feedbackState, wrongNote);
+  if(gameDifficulty === 'custom' || gameDifficulty === 'free') rm = 'both';
+  drawGameStaff(rm, rightNote, leftNote, isDone, feedbackState, wrongNote, activePhantoms);
+}
+
+function startPhantomLoop() {
+  if (phantomLoop) return;
+  phantomLoop = setInterval(() => {
+    if (activePhantoms.length === 0) {
+      clearInterval(phantomLoop);
+      phantomLoop = null;
+      return;
+    }
+    // 透明度衰减并产生位移动画
+    activePhantoms.forEach(p => {
+      p.alpha -= 0.05;
+      p.x += 1; // 稍微向右飘动一点点
+    });
+    activePhantoms = activePhantoms.filter(p => p.alpha > 0);
+    renderCanvas();
+  }, 40);
 }
 
 function resetGame() {

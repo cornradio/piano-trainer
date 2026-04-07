@@ -1,7 +1,7 @@
 // 五线谱绘制模块
 const staffCanvas = document.getElementById('S');
 
-function drawGameStaff(mode, rightNote, leftNote, isDone, feedbackState, wrongNote = null) {
+function drawGameStaff(mode, rightNote, leftNote, isDone, feedbackState, wrongNote = null, phantoms = []) {
   if (!staffCanvas) return;
   const ctx = staffCanvas.getContext('2d');
 
@@ -45,14 +45,14 @@ function drawGameStaff(mode, rightNote, leftNote, isDone, feedbackState, wrongNo
     const tyTop = 50;  
     const tyBot = 160; 
     drawGrandStaffBrace(ctx, tyTop, tyBot, logicW);
-    drawStaffBase(ctx, tyTop, rightNote, 't', logicW, nColor, (wrongNote && wrongNote.m >= 60 ? wrongNote : null));
-    drawStaffBase(ctx, tyBot, leftNote, 'b', logicW, nColor, (wrongNote && wrongNote.m < 60 ? wrongNote : null));
+    drawStaffBase(ctx, tyTop, rightNote, 't', logicW, nColor, (wrongNote && wrongNote.m >= 60 ? wrongNote : null), phantoms.filter(p => p.note.m >= 60));
+    drawStaffBase(ctx, tyBot, leftNote, 'b', logicW, nColor, (wrongNote && wrongNote.m < 60 ? wrongNote : null), phantoms.filter(p => p.note.m < 60));
   } else if (mode === 'rh') {
     const ty = 100;
-    drawStaffBase(ctx, ty, rightNote, 't', logicW, nColor, wrongNote);
+    drawStaffBase(ctx, ty, rightNote, 't', logicW, nColor, wrongNote, phantoms);
   } else {
     const ty = 90;
-    drawStaffBase(ctx, ty, leftNote, 'b', logicW, nColor, wrongNote);
+    drawStaffBase(ctx, ty, leftNote, 'b', logicW, nColor, wrongNote, phantoms);
   }
 }
 
@@ -70,7 +70,7 @@ function drawGrandStaffBrace(ctx, tyTop, tyBot, W) {
   ctx.fillText('{', lx - 28, tyTop + ((tyBot - tyTop) / 2) + 50);
 }
 
-function drawStaffBase(ctx, ty, note, clef, W, noteColor, wrongNote = null) {
+function drawStaffBase(ctx, ty, note, clef, W, noteColor, wrongNote = null, phantoms = []) {
   const lx = 40;
   const rx = W - 20;
 
@@ -97,17 +97,22 @@ function drawStaffBase(ctx, ty, note, clef, W, noteColor, wrongNote = null) {
 
   // 画音符
   if (note) {
-    drawStaffNote(ctx, note, ty, W * 0.6, clef, noteColor, false);
+    drawStaffNote(ctx, note, ty, W * 0.6, clef, noteColor, 1.0);
   }
 
   // 画用户弹错的那个音符【虚影模式】：在同一条竖线上呈现半透明红色
   if (wrongNote) {
-    drawStaffNote(ctx, wrongNote, ty, W * 0.6, clef, '#ef5350', true);
+    drawStaffNote(ctx, wrongNote, ty, W * 0.6, clef, '#ef5350', 0.4);
   }
+
+  // 画乱点模式下的所有淡出虚影
+  phantoms.forEach(phantom => {
+    drawStaffNote(ctx, phantom.note, ty, phantom.x, clef, '#1976d2', phantom.alpha);
+  });
 }
 
-function drawStaffNote(ctx, note, ty, px, clef, noteColor, isGhost = false) {
-  if (isGhost) ctx.globalAlpha = 0.4; // 设置虚影透明度
+function drawStaffNote(ctx, note, ty, px, clef, noteColor, alpha = 1.0) {
+  if (alpha < 1.0) ctx.globalAlpha = alpha; // 设置淡出透明度
   const dy = clef === 't' ? note.td : note.bd;
   const y = ty + dy;
   const lw = 22; 
@@ -169,5 +174,5 @@ function drawStaffNote(ctx, note, ty, px, clef, noteColor, isGhost = false) {
     }
   }
 
-  if (isGhost) ctx.globalAlpha = 1.0; // 恢复透明度
+  if (alpha < 1.0) ctx.globalAlpha = 1.0; // 恢复透明度
 }
