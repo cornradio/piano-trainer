@@ -1,7 +1,7 @@
 // 五线谱绘制模块
 const staffCanvas = document.getElementById('S');
 
-function drawGameStaff(mode, rightNote, leftNote, isDone, feedbackState) {
+function drawGameStaff(mode, rightNote, leftNote, isDone, feedbackState, wrongNote = null) {
   if (!staffCanvas) return;
   const ctx = staffCanvas.getContext('2d');
 
@@ -45,14 +45,14 @@ function drawGameStaff(mode, rightNote, leftNote, isDone, feedbackState) {
     const tyTop = 50;  
     const tyBot = 160; 
     drawGrandStaffBrace(ctx, tyTop, tyBot, logicW);
-    drawStaffBase(ctx, tyTop, rightNote, 't', logicW, nColor);
-    drawStaffBase(ctx, tyBot, leftNote, 'b', logicW, nColor);
+    drawStaffBase(ctx, tyTop, rightNote, 't', logicW, nColor, (wrongNote && wrongNote.m >= 60 ? wrongNote : null));
+    drawStaffBase(ctx, tyBot, leftNote, 'b', logicW, nColor, (wrongNote && wrongNote.m < 60 ? wrongNote : null));
   } else if (mode === 'rh') {
     const ty = 100;
-    drawStaffBase(ctx, ty, rightNote, 't', logicW, nColor);
+    drawStaffBase(ctx, ty, rightNote, 't', logicW, nColor, wrongNote);
   } else {
     const ty = 90;
-    drawStaffBase(ctx, ty, leftNote, 'b', logicW, nColor);
+    drawStaffBase(ctx, ty, leftNote, 'b', logicW, nColor, wrongNote);
   }
 }
 
@@ -70,7 +70,7 @@ function drawGrandStaffBrace(ctx, tyTop, tyBot, W) {
   ctx.fillText('{', lx - 28, tyTop + ((tyBot - tyTop) / 2) + 50);
 }
 
-function drawStaffBase(ctx, ty, note, clef, W, noteColor) {
+function drawStaffBase(ctx, ty, note, clef, W, noteColor, wrongNote = null) {
   const lx = 40;
   const rx = W - 20;
 
@@ -97,11 +97,17 @@ function drawStaffBase(ctx, ty, note, clef, W, noteColor) {
 
   // 画音符
   if (note) {
-    drawStaffNote(ctx, note, ty, W * 0.6, clef, noteColor);
+    drawStaffNote(ctx, note, ty, W * 0.6, clef, noteColor, false);
+  }
+
+  // 画用户弹错的那个音符【虚影模式】：在同一条竖线上呈现半透明红色
+  if (wrongNote) {
+    drawStaffNote(ctx, wrongNote, ty, W * 0.6, clef, '#ef5350', true);
   }
 }
 
-function drawStaffNote(ctx, note, ty, px, clef, noteColor) {
+function drawStaffNote(ctx, note, ty, px, clef, noteColor, isGhost = false) {
+  if (isGhost) ctx.globalAlpha = 0.4; // 设置虚影透明度
   const dy = clef === 't' ? note.td : note.bd;
   const y = ty + dy;
   const lw = 22; 
@@ -162,4 +168,6 @@ function drawStaffNote(ctx, note, ty, px, clef, noteColor) {
       ctx.beginPath(); ctx.moveTo(nx - 10, y); ctx.lineTo(nx - 10, y + 48); ctx.stroke();
     }
   }
+
+  if (isGhost) ctx.globalAlpha = 1.0; // 恢复透明度
 }

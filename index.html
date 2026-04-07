@@ -20,12 +20,19 @@
     <button data-d="easy" class="on">🌱 单八度</button>
     <button data-d="med">🌲 双八度</button>
     <button data-d="hard">🔥 三八度</button>
+    <button data-d="custom">⚙️ 手动范围</button>
+  </div>
+
+  <div id="CustomRangeUI" style="display: none; gap: 10px; margin-bottom: 10px; align-items: center; background: #fff; padding: 10px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+    <span style="font-size: 0.8rem; font-weight: bold; color: #546e7a;">起始音:</span>
+    <select id="startNote" style="padding: 4px; border-radius: 4px; border: 1px solid #90a4ae;"></select>
+    <span style="font-size: 0.8rem; font-weight: bold; color: #546e7a;">结束音:</span>
+    <select id="endNote" style="padding: 4px; border-radius: 4px; border: 1px solid #90a4ae;"></select>
   </div>
 
   <div class="rb" id="RB">
-    <button data-r="rh" class="on">🎵 右手 (高音)</button>
-    <button data-r="lh">🎵 左手 (低音)</button>
-    <button data-r="both">🎵 双手</button>
+    <button data-r="rh" class="on">🎶 高音谱表练习</button>
+    <button data-r="lh">🎶 低音谱表练习</button>
   </div>
 
   <div class="rb" id="SoundBox">

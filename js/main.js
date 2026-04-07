@@ -8,6 +8,28 @@ document.addEventListener('DOMContentLoaded', () => {
   // 初始化物理 MIDI 键盘检测
   initMIDI();
 
+  // 初始化手动范围选择器内容 (仅展示白键作为锚点)
+  const sNote = document.getElementById('startNote');
+  const eNote = document.getElementById('endNote');
+  if (sNote && eNote) {
+    // NOTES_DATA 已在 config.js 定义
+    const whiteNotes = NOTES_DATA.filter(n => !n.b);
+    whiteNotes.forEach(n => {
+      sNote.add(new Option(n.n, n.m));
+      eNote.add(new Option(n.n, n.m));
+    });
+    sNote.value = 60; // C4
+    eNote.value = 72; // C5
+    
+    [sNote, eNote].forEach(el => {
+      el.addEventListener('change', () => {
+        const min = Math.min(parseInt(sNote.value), parseInt(eNote.value));
+        const max = Math.max(parseInt(sNote.value), parseInt(eNote.value));
+        setCustomRange(min, max);
+      });
+    });
+  }
+
   // 2. 绑定难度切换
   document.getElementById('DiffBox').addEventListener('click', e => {
     const btn = e.target.closest('button');
@@ -20,6 +42,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // 传入当前模式和新难度，重建键盘并重置游戏
     const curModeBtn = document.querySelector('#RB button.on');
     const curMode = curModeBtn ? curModeBtn.dataset.r : 'rh';
+    
+    // 显示/隐藏手动范围 UI
+    const customUI = document.getElementById('CustomRangeUI');
+    if (customUI) customUI.style.display = (currentDifficulty === 'custom') ? 'flex' : 'none';
+
     setGameMode(curMode, currentDifficulty);
   });
 

@@ -1,5 +1,20 @@
 // 全局配置与音符数据
 const NOTES_DATA = [
+  // 增加 C2 低八度数据 (MIDI 36-47)
+  {n:'C2', m:36, b:0, td:168, bd:84},
+  {n:'C#2',m:37, b:1, td:168, bd:84},
+  {n:'D2', m:38, b:0, td:161, bd:77},
+  {n:'D#2',m:39, b:1, td:161, bd:77},
+  {n:'E2', m:40, b:0, td:154, bd:70},
+  {n:'F2', m:41, b:0, td:147, bd:63},
+  {n:'F#2',m:42, b:1, td:147, bd:63},
+  {n:'G2', m:43, b:0, td:140, bd:56},
+  {n:'G#2',m:44, b:1, td:140, bd:56},
+  {n:'A2', m:45, b:0, td:133, bd:49},
+  {n:'A#2',m:46, b:1, td:133, bd:49},
+  {n:'B2', m:47, b:0, td:126, bd:42},
+  
+  // 原有数据 (C3-C6)
   {n:'C3', m:48, b:0, td:119, bd:35},
   {n:'C#3',m:49, b:1, td:119, bd:35},
   {n:'D3', m:50, b:0, td:112, bd:28},
@@ -39,11 +54,10 @@ const NOTES_DATA = [
   {n:'C6', m:84, b:0, td:-49, bd:-112},
 ];
 
-// 高音(右)手练习范围 C4-C6
+// 默认逻辑范围
 const RANGE_RH = { min: 60, max: 84 }; 
-// 低音(左)手练习范围 C3-E4
-const RANGE_LH = { min: 48, max: 64 };
+const RANGE_LH = { min: 36, max: 64 };
 
-// 键盘完整呈现范围: C3(48) ~ C6(84)
-const KEYBOARD_MIN = 48;
+// 浏览器支持的钢琴总音域
+const KEYBOARD_MIN = 36;
 const KEYBOARD_MAX = 84;
