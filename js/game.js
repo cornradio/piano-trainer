@@ -53,8 +53,8 @@ function generateStage() {
   let minLH = 48, maxLH = 64;
 
   if (gameDifficulty === 'easy') {
-    minRH = 60; maxRH = 71; // 单八度: C4 - B4
-    minLH = 48; maxLH = 59; // 单八度: C3 - B3
+    minRH = 60; maxRH = 72; // 单八度: C4 - C5 (包含结束音)
+    minLH = 48; maxLH = 60; // 单八度: C3 - C4 (包含结束音)
   } else if (gameDifficulty === 'med') {
     minRH = 60; maxRH = 84; // 右手双八度: C4 - B5
     minLH = 36; maxLH = 60; // 左手双八度: C2 - C4
@@ -221,8 +221,8 @@ function resetGame() {
 function getKeyboardRange() {
   let minK = 48, maxK = 84;
   if (gameDifficulty === 'easy') {
-    if (mode === 'rh') { minK = 60; maxK = 72; }      // 右手：单八度
-    else if (mode === 'lh') { minK = 48; maxK = 60; } // 左手：单八度
+    if (mode === 'rh') { minK = 60; maxK = 72; }      // 右手：单八度 (包含 C5)
+    else if (mode === 'lh') { minK = 48; maxK = 60; } // 左手：单八度 (包含 C4)
     else { minK = 48; maxK = 72; }                    // 双手：C3-C5
   } else if (gameDifficulty === 'med') {
     if (mode === 'rh') { minK = 60; maxK = 84; }      // 右手：双八度
