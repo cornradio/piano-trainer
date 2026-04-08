@@ -1,80 +1,93 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>🎹 钢琴识谱练习</title>
-<link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>🎹 钢琴识谱练习</title>
+  <link rel="stylesheet" href="css/style.css">
 </head>
+
 <body>
 
-<button id="ToggleMenuBtn">⚙️设置项</button>
+  <button id="ToggleMenuBtn">⚙️设置项</button>
 
-<div class="controls" id="ControlsMenu">
-  <h1>🎹 钢琴识谱练习</h1>
-  <p class="sub">看五线谱 · 找到音 · 按琴键</p>
+  <div class="controls" id="ControlsMenu">
+    <h1>🎹 钢琴识谱练习</h1>
+    <p class="sub">看五线谱 · 找到音 · 按琴键</p>
 
-  <div id="midiStatus">🎹 等待 MIDI 设备连接...</div>
+    <div id="midiStatus">🎹 等待 MIDI 设备连接...</div>
 
-  <div class="rb" id="DiffBox">
-    <button data-d="easy" class="on">🌱 单八度</button>
-    <button data-d="med">🌲 双八度</button>
-    <button data-d="hard">🔥 三八度</button>
-    <button data-d="custom">⚙️ 手动范围</button>
-    <button data-d="free">🎨 乱点模式</button>
+    <div class="rb" id="DiffBox">
+      <button data-d="easy" class="on">🌱 单八度</button>
+      <button data-d="med">🌲 双八度</button>
+      <button data-d="hard">🔥 三八度</button>
+      <button data-d="custom">⚙️ 手动范围</button>
+      <button data-d="free">🎨 乱点模式</button>
+    </div>
+
+    <div id="CustomRangeUI"
+      style="display: none; gap: 10px; margin-bottom: 10px; align-items: center; background: #fff; padding: 10px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+      <span style="font-size: 0.8rem; font-weight: bold; color: #546e7a;">起始音:</span>
+      <select id="startNote" style="padding: 4px; border-radius: 4px; border: 1px solid #90a4ae;"></select>
+      <span style="font-size: 0.8rem; font-weight: bold; color: #546e7a;">结束音:</span>
+      <select id="endNote" style="padding: 4px; border-radius: 4px; border: 1px solid #90a4ae;"></select>
+    </div>
+
+    <div class="rb" id="RB">
+      <button data-r="rh" class="on">🎶 高音谱表练习</button>
+      <button data-r="lh">🎶 低音谱表练习</button>
+    </div>
+
+    <div class="rb" id="SoundBox">
+      <button data-s="on" class="on">🔊 声音</button>
+      <button data-s="off">🔇 静音</button>
+    </div>
+
+    <div class="rb" id="AccidBox">
+      <button data-a="on" class="on">#️⃣ 含升号</button>
+      <button data-a="off">⚪ 仅白键</button>
+    </div>
+
+    <div class="sc">
+      <div>
+        <div class="v" id="sOk">0</div>
+        <div class="l">✅ 正确</div>
+      </div>
+      <div>
+        <div class="v" id="sSt">0</div>
+        <div class="l">🔥 连对</div>
+      </div>
+      <div>
+        <div class="v" id="sAl">0</div>
+        <div class="l">🎯 已练</div>
+      </div>
+    </div>
+
+    <button id="CloseMenuBtn" class="close-menu">⬅️ 隐藏面板</button>
   </div>
 
-  <div id="CustomRangeUI" style="display: none; gap: 10px; margin-bottom: 10px; align-items: center; background: #fff; padding: 10px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-    <span style="font-size: 0.8rem; font-weight: bold; color: #546e7a;">起始音:</span>
-    <select id="startNote" style="padding: 4px; border-radius: 4px; border: 1px solid #90a4ae;"></select>
-    <span style="font-size: 0.8rem; font-weight: bold; color: #546e7a;">结束音:</span>
-    <select id="endNote" style="padding: 4px; border-radius: 4px; border: 1px solid #90a4ae;"></select>
+  <div class="main-area">
+    <div class="fb" id="fb"></div>
+
+    <div class="sb">
+      <canvas id="S"></canvas>
+      <!-- <div class="hint" id="hint">🎵 点击琴键开始</div> -->
+    </div>
+
+    <div class="pw">
+      <div class="piano" id="PI"></div>
+    </div>
   </div>
 
-  <div class="rb" id="RB">
-    <button data-r="rh" class="on">🎶 高音谱表练习</button>
-    <button data-r="lh">🎶 低音谱表练习</button>
-  </div>
-
-  <div class="rb" id="SoundBox">
-    <button data-s="on" class="on">🔊 声音</button>
-    <button data-s="off">🔇 静音</button>
-  </div>
-
-  <div class="rb" id="AccidBox">
-    <button data-a="on" class="on">#️⃣ 含升号</button>
-    <button data-a="off">⚪ 仅白键</button>
-  </div>
-
-  <div class="sc">
-    <div><div class="v" id="sOk">0</div><div class="l">✅ 正确</div></div>
-    <div><div class="v" id="sSt">0</div><div class="l">🔥 连对</div></div>
-    <div><div class="v" id="sAl">0</div><div class="l">🎯 已练</div></div>
-  </div>
-  
-  <button id="CloseMenuBtn" class="close-menu">⬅️ 隐藏面板</button>
-</div>
-
-<div class="main-area">
-  <div class="fb" id="fb"></div>
-
-  <div class="sb">
-    <canvas id="S"></canvas>
-    <div class="hint" id="hint">🎵 点击琴键开始</div>
-  </div>
-
-  <div class="pw">
-    <div class="piano" id="PI"></div>
-  </div>
-</div>
-
-<script src="js/config.js"></script>
-<script src="js/audio.js"></script>
-<script src="js/midi.js"></script>
-<script src="js/staff.js"></script>
-<script src="js/piano.js"></script>
-<script src="js/game.js"></script>
-<script src="js/main.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/midi.js"></script>
+  <script src="js/staff.js"></script>
+  <script src="js/piano.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/main.js"></script>
 
 </body>
+
 </html>

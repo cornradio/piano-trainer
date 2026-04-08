@@ -73,11 +73,11 @@ function generateStage() {
   if (mode === 'rh') {
     rightNote = candidatesRH[Math.floor(Math.random() * candidatesRH.length)];
     leftNote = null;
-    hint.textContent = '🎵 请认出该音符在高音谱表上的位置并弹出';
+    // hint.textContent = '🎵 请认出该音符在高音谱表上的位置并弹出';
   } else {
     leftNote = candidatesLH[Math.floor(Math.random() * candidatesLH.length)];
     rightNote = null;
-    hint.textContent = '🎵 请认出该音符在低音谱表上的位置并弹出';
+    // hint.textContent = '🎵 请认出该音符在低音谱表上的位置并弹出';
   }
 
   // 处理升降号显示逻辑：随机选择显示升号还是降号
@@ -87,7 +87,7 @@ function generateStage() {
   } else if (rightNote) {
     rightNote.displayName = rightNote.n;
   }
-  
+
   if (leftNote && leftNote.b) {
     leftNote.useFlat = Math.random() > 0.5;
     leftNote.displayName = leftNote.useFlat ? leftNote.f : leftNote.s;
@@ -102,7 +102,7 @@ function generateStage() {
   currentHits = []; // 重置当前已击中列表
 
   drawGameStaff(renderMode, rightNote, leftNote, isDone, '');
-  
+
   // 延迟一小小会儿产生出题声音，更贴近使用习惯
   setTimeout(() => {
     if (rightNote) playNoteSound(rightNote.m);
@@ -112,7 +112,7 @@ function generateStage() {
 
 function handleKeyTap(e, m) {
   playNoteSound(m);
-  
+
   if (gameDifficulty === 'free') {
     // 自由模式：只负责生成飞舞的虚影
     const n = NOTES_DATA.find(x => x.m === m);
@@ -124,7 +124,7 @@ function handleKeyTap(e, m) {
   }
 
   if (isDone) return;
-  
+
   const expectedNotes = [rightNote, leftNote].filter(n => n !== null);
   const target = expectedNotes.find(t => t.m === m);
 
@@ -138,13 +138,13 @@ function handleKeyTap(e, m) {
     lockPianoKeys();
     highlightKey(m, 'wh');
     expectedNotes.forEach(t => highlightKey(t.m, 'ch'));
-    
+
     // 记录弹错的那个音，用于在谱面上绘制显示
     wrongNote = NOTES_DATA.find(n => n.m === m);
-    
+
     highlightKey(m, 'wh');
     expectedNotes.forEach(t => highlightKey(t.m, 'ch'));
-    
+
     fb.textContent = '❌ 弹错了，标准答案是 ' + expectedNotes.map(t => t.displayName).join(' 与 ');
     fb.className = 'fb no';
     renderCanvas('no');
@@ -164,11 +164,11 @@ function handleKeyTap(e, m) {
       score.total++;
       score.streak++;
       if (score.streak > score.maxStreak) score.maxStreak = score.streak;
-      
+
       const msgs = ['✅ 正确！', '🎉 太棒了！', '✨ 漂亮！', '👏 完全正确！'];
       fb.textContent = msgs[Math.floor(Math.random() * msgs.length)] + ' ' + expectedNotes.map(t => t.displayName).join(' ');
       fb.className = 'fb ok';
-      
+
       renderCanvas('ok');
       if (gameTimer) clearTimeout(gameTimer);
       gameTimer = setTimeout(generateStage, 900);
@@ -178,7 +178,7 @@ function handleKeyTap(e, m) {
       fb.className = 'fb';
     }
   }
-  
+
   updateScoreUI();
 }
 
@@ -190,7 +190,7 @@ function updateScoreUI() {
 
 function renderCanvas(feedbackState = '') {
   let rm = mode;
-  if(gameDifficulty === 'custom' || gameDifficulty === 'free') rm = 'both';
+  if (gameDifficulty === 'custom' || gameDifficulty === 'free') rm = 'both';
   drawGameStaff(rm, rightNote, leftNote, isDone, feedbackState, wrongNote, activePhantoms);
 }
 
