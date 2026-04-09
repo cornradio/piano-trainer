@@ -1,128 +1,411 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>钢琴识谱练习</title>
-  <link rel="stylesheet" href="css/style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>钢琴练习工具</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-deep: #0a0a0b;
+      --bg-card: #141416;
+      --bg-card-hover: #1c1c1f;
+      --text-primary: #f5f5f3;
+      --text-secondary: #8a8a8d;
+      --text-muted: #5a5a5d;
+      --accent-ivory: #f5f5f0;
+      --accent-gold: #c9a962;
+      --border-subtle: #2a2a2d;
+      --border-active: #3d3d42;
+      --shadow-glow: rgba(201, 169, 98, 0.15);
+      --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'DM Sans', -apple-system, 'PingFang SC', sans-serif;
+      background: var(--bg-deep);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Background atmosphere */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(201, 169, 98, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse 60% 40% at 80% 100%, rgba(201, 169, 98, 0.05) 0%, transparent 40%),
+        linear-gradient(180deg, #0a0a0b 0%, #0d0d0f 100%);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    /* Subtle key pattern */
+    body::after {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image:
+        repeating-linear-gradient(
+          90deg,
+          transparent,
+          transparent 80px,
+          rgba(255, 255, 255, 0.01) 80px,
+          rgba(255, 255, 255, 0.01) 81px
+        );
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 60px;
+      animation: fadeInDown 0.8s ease-out;
+    }
+
+    @keyframes fadeInDown {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .logo-icon {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, var(--accent-ivory) 0%, #d4d4d0 100%);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      box-shadow: 0 4px 16px rgba(245, 245, 240, 0.2);
+    }
+
+    .logo-text {
+      font-family: 'Noto Serif SC', serif;
+      font-size: 28px;
+      font-weight: 600;
+      color: var(--text-primary);
+      letter-spacing: 2px;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: var(--text-muted);
+      letter-spacing: 4px;
+      text-transform: uppercase;
+    }
+
+    /* Cards Container */
+    .cards-container {
+      display: flex;
+      gap: 32px;
+      max-width: 900px;
+      width: 100%;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    /* Card Base */
+    .card {
+      flex: 1;
+      min-width: 300px;
+      max-width: 420px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
+      padding: 40px 32px;
+      text-decoration: none;
+      color: inherit;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: var(--shadow-card);
+      animation: fadeInUp 0.8s ease-out backwards;
+    }
+
+    .card:nth-child(1) {
+      animation-delay: 0.2s;
+    }
+
+    .card:nth-child(2) {
+      animation-delay: 0.35s;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Card hover effects */
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, var(--accent-ivory), transparent);
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-8px);
+      background: var(--bg-card-hover);
+      border-color: var(--border-active);
+      box-shadow: 0 20px 48px rgba(0, 0, 0, 0.5), var(--shadow-glow);
+    }
+
+    .card:hover::before {
+      opacity: 1;
+    }
+
+    /* Card Visual - Left side decoration */
+    .card-visual {
+      width: 80px;
+      height: 80px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      margin-bottom: 24px;
+      position: relative;
+      transition: transform 0.4s ease;
+    }
+
+    .card:hover .card-visual {
+      transform: scale(1.05) rotate(3deg);
+    }
+
+    /* Trainer card - green/garden theme */
+    .card-trainer .card-visual {
+      background: linear-gradient(135deg, #2d4a3e 0%, #1a2f28 100%);
+      box-shadow: 0 8px 24px rgba(45, 74, 62, 0.4);
+    }
+
+    .card-trainer:hover .card-visual {
+      box-shadow: 0 12px 32px rgba(45, 74, 62, 0.6);
+    }
+
+    /* Recoder card - gold/recording theme */
+    .card-recoder .card-visual {
+      background: linear-gradient(135deg, #4a3d2a 0%, #2d2518 100%);
+      box-shadow: 0 8px 24px rgba(201, 169, 98, 0.3);
+    }
+
+    .card-recoder:hover .card-visual {
+      box-shadow: 0 12px 32px rgba(201, 169, 98, 0.5);
+    }
+
+    /* Card Content */
+    .card-title {
+      font-family: 'Noto Serif SC', serif;
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+    }
+
+    .card-desc {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+
+    /* Card Tags */
+    .card-tags {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .tag {
+      font-size: 12px;
+      padding: 6px 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
+      color: var(--text-muted);
+      transition: all 0.3s ease;
+    }
+
+    .card:hover .tag {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--border-active);
+      color: var(--text-secondary);
+    }
+
+    /* Arrow indicator */
+    .card-arrow {
+      position: absolute;
+      right: 24px;
+      top: 50%;
+      transform: translateY(-50%) translateX(10px);
+      opacity: 0;
+      transition: all 0.4s ease;
+      font-size: 20px;
+      color: var(--text-muted);
+    }
+
+    .card:hover .card-arrow {
+      opacity: 1;
+      transform: translateY(-50%) translateX(0);
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: 60px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 12px;
+      animation: fadeIn 1s ease-out 0.5s backwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .footer span {
+      color: var(--accent-gold);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .cards-container {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .card {
+        width: 100%;
+        max-width: 100%;
+      }
+
+      .logo-text {
+        font-size: 22px;
+      }
+
+      .subtitle {
+        font-size: 11px;
+        letter-spacing: 2px;
+      }
+
+      .card-visual {
+        width: 64px;
+        height: 64px;
+        font-size: 28px;
+      }
+
+      .card-title {
+        font-size: 18px;
+      }
+
+      .card-desc {
+        font-size: 13px;
+      }
+    }
+
+    /* Subtle floating animation for decorative elements */
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+
+    .card:nth-child(1) .card-visual {
+      animation: float 4s ease-in-out infinite;
+      animation-delay: 0.5s;
+    }
+
+    .card:nth-child(2) .card-visual {
+      animation: float 4s ease-in-out infinite;
+      animation-delay: 1s;
+    }
+  </style>
 </head>
-
 <body>
-
-  <!-- 设置按钮 - 右上角悬浮 -->
-  <button id="SettingsBtn" class="settings-btn" aria-label="设置">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <circle cx="12" cy="12" r="3"></circle>
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-    </svg>
-  </button>
-
-  <!-- 遮罩层 -->
-  <div id="SettingsOverlay" class="settings-overlay"></div>
-
-  <!-- 设置面板 - 右侧滑出 -->
-  <div id="SettingsPanel" class="settings-panel">
-    <div class="settings-header">
-      <h2>设置</h2>
-      <button id="CloseSettingsBtn" class="close-btn" aria-label="关闭">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-      </button>
+  <header class="header">
+    <div class="logo">
+      <div class="logo-icon">🎹</div>
+      <span class="logo-text">钢琴工具</span>
     </div>
+    <p class="subtitle">PIANO TRAINER & RECORDER</p>
+  </header>
 
-    <div class="settings-content">
-      <!-- 难度选择 -->
-      <div class="settings-section">
-        <h3>难度</h3>
-        <div class="btn-group" id="DiffBox">
-          <button data-d="easy" class="on">🌱 单八度</button>
-          <button data-d="med">🌲 双八度</button>
-          <button data-d="hard">🔥 三八度</button>
-          <button data-d="custom">⚙️ 手动范围</button>
-          <button data-d="free">🎨 乱点模式</button>
-        </div>
+  <div class="cards-container">
+    <!-- Trainer Card -->
+    <a href="trainer/index.html" class="card card-trainer">
+      <div class="card-visual">📖</div>
+      <h2 class="card-title">钢琴练习识谱</h2>
+      <p class="card-desc">通过五线谱识谱训练提升你的读谱能力。从基础音符开始，逐步挑战更复杂的节奏型和调式。</p>
+      <div class="card-tags">
+        <span class="tag">识谱训练</span>
+        <span class="tag">五线谱</span>
+        <span class="tag">MIDI</span>
       </div>
+      <span class="card-arrow">→</span>
+    </a>
 
-      <!-- 手动范围 -->
-      <div id="CustomRangeUI" class="settings-section custom-range" style="display: none;">
-        <h3>自定义范围</h3>
-        <div class="range-selectors">
-          <select id="startNote"></select>
-          <span>至</span>
-          <select id="endNote"></select>
-        </div>
+    <!-- Recoder Card -->
+    <a href="recoder/index.html" class="card card-recoder">
+      <div class="card-visual">🎙️</div>
+      <h2 class="card-title">钢琴录音重放</h2>
+      <p class="card-desc">连接 MIDI 键盘录制你的演奏，回放练习，记录进步。支持 MIDI 文件导入和导出。</p>
+      <div class="card-tags">
+        <span class="tag">MIDI录制</span>
+        <span class="tag">回放</span>
+        <span class="tag">导出</span>
       </div>
-
-      <!-- 谱表模式 -->
-      <div class="settings-section">
-        <h3>谱表</h3>
-        <div class="btn-group" id="RB">
-          <button data-r="rh" class="on">🎶 高音谱表</button>
-          <button data-r="lh">🎶 低音谱表</button>
-        </div>
-      </div>
-
-      <!-- 声音 -->
-      <div class="settings-section">
-        <h3>声音</h3>
-        <div class="btn-group" id="SoundBox">
-          <button data-s="on" class="on">🔊 开启</button>
-          <button data-s="off">🔇 静音</button>
-        </div>
-      </div>
-
-      <!-- 升降号 -->
-      <div class="settings-section">
-        <h3>音符</h3>
-        <div class="btn-group" id="AccidBox">
-          <button data-a="on" class="on">#️⃣ 含升降号</button>
-          <button data-a="off">⚪ 仅白键</button>
-        </div>
-      </div>
-    </div>
+      <span class="card-arrow">→</span>
+    </a>
   </div>
 
-  <!-- 主显示区域 -->
-  <div class="main-area">
-    <!-- 顶部状态栏 -->
-    <div class="top-bar">
-      <div id="midiStatus" class="midi-status">🎹 等待 MIDI</div>
-      <div class="stats">
-        <div class="stat">
-          <span class="stat-num" id="sOk">0</span>
-          <span class="stat-text">正确</span>
-        </div>
-        <div class="stat">
-          <span class="stat-num" id="sSt">0</span>
-          <span class="stat-text">连对</span>
-        </div>
-        <div class="stat">
-          <span class="stat-num" id="sAl">0</span>
-          <span class="stat-text">已练</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="sb">
-      <canvas id="S"></canvas>
-    </div>
-    <div class="feedback" id="fb"></div>
-    <div class="piano-wrapper">
-      <div class="piano" id="PI"></div>
-    </div>
-  </div>
-
-  <script src="js/config.js"></script>
-  <script src="js/audio.js"></script>
-  <script src="js/midi.js"></script>
-  <script src="js/staff.js"></script>
-  <script src="js/piano.js"></script>
-  <script src="js/game.js"></script>
-  <script src="js/main.js"></script>
-
+  <footer class="footer">
+    <p>用 <span>❤️</span> 打造 · 让练琴更有趣</p>
+  </footer>
 </body>
-
 </html>

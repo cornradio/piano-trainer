@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>钢琴录制器</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #f5f5f5;
+      font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: #333;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      margin: 0;
+    }
+
+    /* 顶部导航 */
+    .page-header {
+      padding: 10px 16px;
+      background: #fff;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .page-header h1 {
+      font-size: 1rem;
+      margin: 0;
+    }
+
+    .page-header a,
+    .page-header button {
+      color: #1976d2;
+      text-decoration: none;
+      font-size: 0.85rem;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+
+    .page-header button:hover {
+      background: #e3f2fd;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    #importMidiInput {
+      display: none;
+    }
+
+    /* 左侧列（竖屏时垂直排列） */
+    .left-column {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .recorder-main {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    /* 控制面板（竖屏时顶部固定） */
+    .control-panel {
+      background: #fff;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .control-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .midi-status-bar {
+      flex: 1;
+      text-align: center;
+      padding: 8px 12px;
+      background: #f5f5f5;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      color: #666;
+    }
+
+    .midi-status-bar.connected {
+      color: #2e7d32;
+    }
+
+    .midi-status-bar.disconnected {
+      color: #f57c00;
+    }
+
+    .sound-toggle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 10px;
+      background: #f5f5f5;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .sound-toggle input {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* 音符显示 */
+    .note-display {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+
+    .note-display .current-note {
+      font-size: 3.5rem;
+      font-weight: 700;
+      color: #1976d2;
+      margin-bottom: 4px;
+    }
+
+    .note-display .current-note.off {
+      color: #bbb;
+    }
+
+    .note-display .current-octave {
+      font-size: 0.9rem;
+      color: #999;
+    }
+
+    .note-display .midi-vel {
+      font-size: 0.75rem;
+      color: #bbb;
+      margin-top: 2px;
+    }
+
+    /* 录制状态 */
+    .record-status {
+      text-align: center;
+      font-size: 0.85rem;
+      padding: 10px;
+      border-radius: 8px;
+      background: #f5f5f5;
+    }
+
+    .record-status.recording {
+      background: #ffebee;
+      color: #c62828;
+    }
+
+    .record-status.playing {
+      background: #e3f2fd;
+      color: #1976d2;
+    }
+
+    /* 录制控制按钮 */
+    .record-controls {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    .recorder-btn {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      border: 2px solid #ddd;
+      background: #fff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      transition: all 0.2s ease;
+    }
+
+    .recorder-btn:hover {
+      transform: scale(1.05);
+    }
+
+    .recorder-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .recorder-btn:disabled:hover {
+      transform: none;
+    }
+
+    .recorder-btn.rec-btn.active {
+      background: #f44336;
+      border-color: #f44336;
+      color: #fff;
+      animation: recPulse 1s ease infinite;
+    }
+
+    @keyframes recPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.5); }
+      50% { box-shadow: 0 0 0 10px rgba(244, 67, 54, 0); }
+    }
+
+    .btn-label {
+      font-size: 0.7rem;
+      color: #666;
+      margin-top: 4px;
+      text-align: center;
+    }
+
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* 进度条 */
+    .progress-container {
+      padding: 8px 12px;
+      background: #fff;
+      border-radius: 8px;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 6px;
+      background: #eee;
+      border-radius: 3px;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: #1976d2;
+      border-radius: 3px;
+      width: 0%;
+      transition: width 0.1s linear;
+    }
+
+    .progress-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      color: #999;
+      margin-top: 4px;
+    }
+
+    /* 曲目列表 */
+    .song-list-panel {
+      background: #fff;
+      border-radius: 12px 12px 0 0;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .song-list-header {
+      padding: 10px 16px;
+      font-weight: 600;
+      font-size: 0.8rem;
+      color: #666;
+      background: #fafafa;
+      border-bottom: 1px solid #eee;
+      flex-shrink: 0;
+    }
+
+    .song-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 12px;
+    }
+
+    .song-item {
+      padding: 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .song-item:hover {
+      background: #f5f5f5;
+    }
+
+    .song-item.playing {
+      background: #e3f2fd;
+    }
+
+    .song-item .song-icon {
+      font-size: 1.1rem;
+    }
+
+    .song-item .song-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .song-item .song-name {
+      font-size: 0.85rem;
+      color: #333;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .song-item .song-meta {
+      font-size: 0.7rem;
+      color: #999;
+    }
+
+    .song-item .del-btn,
+    .song-item .export-btn,
+    .song-item .edit-btn {
+      width: 28px;
+      height: 28px;
+      border: none;
+      background: #f5f5f5;
+      color: #666;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 1;
+      flex-shrink: 0;
+    }
+
+    .song-item .export-btn {
+      background: #e3f2fd;
+      color: #1976d2;
+    }
+
+    .song-item .edit-btn {
+      background: #fff3e0;
+      color: #f57c00;
+    }
+
+    .empty-list {
+      text-align: center;
+      color: #999;
+      font-size: 0.8rem;
+      padding: 24px;
+    }
+
+    /* 横屏 / 桌面 */
+    @media (min-width: 900px) {
+      html, body {
+        height: 100%;
+        overflow: hidden;
+      }
+
+      body.recorder-body {
+        flex-direction: row;
+      }
+
+      /* 左侧列：header + (controls | song-list) */
+      .left-column {
+        display: flex;
+        flex-direction: column;
+        width: 480px;
+        flex-shrink: 0;
+        height: 100%;
+        overflow: hidden;
+      }
+
+      .page-header {
+        flex-shrink: 0;
+        height: auto;
+      }
+
+      .recorder-main {
+        flex: 1;
+        flex-direction: row;
+        overflow: hidden;
+        min-height: 0;
+        padding: 0;
+        gap: 0;
+      }
+
+      .control-panel {
+        flex: 1;
+        background: #fff;
+        min-width: 0;
+        overflow-y: auto;
+        border-radius: 0;
+        box-shadow: none;
+      }
+
+      .song-list-panel {
+        width: 300px;
+        flex-shrink: 0;
+        border-radius: 0;
+        box-shadow: none;
+        border-left: 1px solid #eee;
+        height: 100%;
+      }
+
+      .song-list {
+        height: 100%;
+      }
+    }
+
+      .song-list-header {
+        position: sticky;
+        top: 0;
+      }
+    }
+  </style>
+</head>
+
+<body class="recorder-body">
+  <!-- 左侧：竖屏布局的控制区 -->
+  <div class="left-column">
+    <div class="page-header">
+      <h1>🎹 钢琴录制器</h1>
+      <div class="header-actions">
+        <button id="importMidiBtn">📂 导入</button>
+        <input type="file" id="importMidiInput" accept=".mid,.midi">
+        <a href="index.html">返回</a>
+      </div>
+    </div>
+
+    <div class="recorder-main">
+      <!-- 控制面板 -->
+      <div class="control-panel">
+        <div class="control-row">
+          <div class="midi-status-bar" id="midiStatus">🎹 等待 MIDI 设备...</div>
+          <label class="sound-toggle">
+            <input type="checkbox" id="soundToggle" checked>
+            <span>🔊 声音</span>
+          </label>
+        </div>
+
+        <div class="note-display">
+          <canvas id="staffCanvas" style="width:240px;height:140px;display:block;margin:0 auto 8px;background:#fff;border:1px solid #ccc;border-radius:4px"></canvas>
+          <div class="current-note" id="currentNote">--</div>
+          <div class="current-octave" id="currentOctave">按下琴键开始</div>
+          <div class="midi-vel" id="velDisplay"></div>
+        </div>
+
+        <div class="progress-container">
+          <div class="progress-bar" id="progressBar">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+          <div class="progress-info">
+            <span id="progressStart">0:00</span>
+            <span id="progressEnd">0:00</span>
+          </div>
+        </div>
+
+        <div class="record-status" id="recordStatus">准备就绪 - 请连接 MIDI 键盘</div>
+
+        <div class="record-controls">
+          <div class="btn-group">
+            <button class="recorder-btn rec-btn" id="recBtn">●</button>
+            <div class="btn-label">录制</div>
+          </div>
+          <div class="btn-group">
+            <button class="recorder-btn" id="playBtn" disabled>▶</button>
+            <div class="btn-label">播放</div>
+          </div>
+          <div class="btn-group">
+            <button class="recorder-btn" id="stopBtn" disabled>■</button>
+            <div class="btn-label">停止</div>
+          </div>
+          <div class="btn-group">
+            <button class="recorder-btn" id="saveBtn" disabled>💾</button>
+            <div class="btn-label">保存</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 曲目列表 -->
+      <div class="song-list-panel">
+        <div class="song-list-header">已保存曲目</div>
+        <div class="song-list" id="songList"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/midi.js"></script>
+  <script src="js/staff.js"></script>
+  <script>
+    const recordStatus = document.getElementById('recordStatus');
+    const currentNoteEl = document.getElementById('currentNote');
+    const currentOctaveEl = document.getElementById('currentOctave');
+    const velDisplayEl = document.getElementById('velDisplay');
+    const recBtn = document.getElementById('recBtn');
+    const playBtn = document.getElementById('playBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const saveBtn = document.getElementById('saveBtn');
+    const midiStatusEl = document.getElementById('midiStatus');
+    const songListEl = document.getElementById('songList');
+    const progressFill = document.getElementById('progressFill');
+    const progressBar = document.getElementById('progressBar');
+    const progressStart = document.getElementById('progressStart');
+    const progressEnd = document.getElementById('progressEnd');
+    const soundToggle = document.getElementById('soundToggle');
+
+    let isRecording = false;
+    let isPlaying = false;
+    let recordedEvents = [];
+    let recordStartTime = 0;
+    let playbackIndex = 0;
+    let playbackTimeout = null;
+    let savedSongs = JSON.parse(localStorage.getItem('piano_recordings_v2') || '[]');
+    let currentPlayingIndex = -1;
+    let midiConnected = false;
+    let currentSongEvents = null;
+
+    // 声音开关 - 从 localStorage 读取或默认开启
+    const savedSound = localStorage.getItem('piano_sound_enabled');
+    const initialSound = savedSound === null ? true : savedSound === 'true';
+    soundEnabled = initialSound;
+    soundToggle.checked = soundEnabled;
+    soundToggle.parentElement.querySelector('span').textContent = soundEnabled ? '🔊 声音' : '🔇 静音';
+
+    // 点击任意按钮时初始化音频
+    function initAudioOnFirstClick() {
+      if (typeof initAudio === 'function') initAudio();
+      document.removeEventListener('click', initAudioOnFirstClick);
+    }
+    document.addEventListener('click', initAudioOnFirstClick);
+
+    soundToggle.addEventListener('change', () => {
+      soundEnabled = soundToggle.checked;
+      localStorage.setItem('piano_sound_enabled', soundEnabled);
+      soundToggle.parentElement.querySelector('span').textContent = soundEnabled ? '🔊 声音' : '🔇 静音';
+    });
+
+    // 格式化时间
+    function formatTime(ms) {
+      const seconds = Math.floor(ms / 1000);
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    // 更新进度条
+    function updateProgress(eventIndex, totalEvents, events) {
+      if (!events || totalEvents === 0) {
+        progressFill.style.width = '0%';
+        progressStart.textContent = '0:00';
+        progressEnd.textContent = '0:00';
+        return;
+      }
+      const percent = totalEvents > 0 ? (eventIndex / totalEvents) * 100 : 0;
+      progressFill.style.width = percent + '%';
+      const cur = eventIndex < events.length ? events[eventIndex].t : events[events.length - 1].t;
+      const end = events[events.length - 1].t;
+      progressStart.textContent = formatTime(cur);
+      progressEnd.textContent = formatTime(end);
+    }
+
+    // 进度条点击跳转
+    progressBar.addEventListener('click', (e) => {
+      if (!isPlaying || !currentSongEvents || currentSongEvents.length === 0) return;
+      const rect = progressBar.getBoundingClientRect();
+      const percent = (e.clientX - rect.left) / rect.width;
+      const targetEventIndex = Math.floor(percent * currentSongEvents.length);
+      if (targetEventIndex >= 0 && targetEventIndex < currentSongEvents.length) {
+        clearTimeout(playbackTimeout);
+        playbackIndex = targetEventIndex;
+        playNextEvent();
+      }
+    });
+
+    // 格式化音符名称 (如 C5, B5 显示为大写字母+数字角标)
+    function formatNoteName(midiNote) {
+      const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+      const noteIndex = midiNote % 12;
+      const octave = Math.floor(midiNote / 12) - 1;
+      const baseName = notes[noteIndex];
+      // 只需要显示到 C6
+      if (octave >= 6) return baseName + '6';
+      return baseName + octave;
+    }
+
+    // 显示音符 - 使用 requestAnimationFrame 异步渲染
+    // 从 staff.js 获取 canvas，因为 staff.js 移除了全局变量
+    function renderNote(params) {
+      const { type, info, m, v } = params;
+      const staffCanvas = document.getElementById('staffCanvas');
+      if (type === 'on') {
+        currentNoteEl.textContent = formatNoteName(m);
+        currentNoteEl.classList.remove('off');
+        currentOctaveEl.textContent = `MIDI: ${m}`;
+        velDisplayEl.textContent = `力度: ${v}`;
+
+        // 绘制五线谱 - 只显示当前按下的音符
+        if (info && staffCanvas) {
+          // 随机决定显示升号还是降号
+          const noteData = { ...info, useFlat: Math.random() > 0.5 };
+          const mode = m >= 60 ? 'rh' : 'lh';
+          drawGameStaff(mode, mode === 'rh' ? noteData : null, mode === 'lh' ? noteData : null, false, '', null, [], staffCanvas);
+        }
+      } else {
+        currentNoteEl.textContent = formatNoteName(m);
+        currentNoteEl.classList.add('off');
+        currentOctaveEl.textContent = `MIDI: ${m}`;
+        velDisplayEl.textContent = '';
+      }
+    }
+
+    function displayNote(type, m, v) {
+      const info = NOTES_DATA.find(n => n.m === m);
+      requestAnimationFrame(() => renderNote({ type, info, m, v }));
+    }
+
+    // NOTE ON
+    function handleKeyOn(m, velocity = 100) {
+      if (soundEnabled) playNoteSound(m, velocity);
+      sendMIDINoteOn && sendMIDINoteOn(m, velocity);
+      displayNote('on', m, velocity);
+      if (isRecording) {
+        const t = Date.now() - recordStartTime;
+        recordedEvents.push({ type: 'on', m, v: velocity, t });
+        recordStatus.textContent = `🔴 录制中... ${recordedEvents.length} 事件`;
+        updateProgress(recordedEvents.length, recordedEvents.length, recordedEvents);
+      }
+    }
+
+    // NOTE OFF
+    function handleKeyOff(m, velocity = 0) {
+      sendMIDINoteOff && sendMIDINoteOff(m, velocity);
+      displayNote('off', m, velocity);
+      if (isRecording) {
+        const t = Date.now() - recordStartTime;
+        recordedEvents.push({ type: 'off', m, v: velocity, t });
+        recordStatus.textContent = `🔴 录制中... ${recordedEvents.length} 事件`;
+        updateProgress(recordedEvents.length, recordedEvents.length, recordedEvents);
+      }
+    }
+
+    function updateMidiStatus(text, connected) {
+      midiStatusEl.textContent = text;
+      midiStatusEl.className = 'midi-status-bar ' + (connected ? 'connected' : 'disconnected');
+      midiConnected = connected;
+      updateRecordStatus();
+    }
+
+    function updateRecordStatus() {
+      if (!midiConnected) {
+        recordStatus.textContent = '请连接 MIDI 键盘';
+        recordStatus.className = 'record-status';
+        return;
+      }
+      if (isRecording) {
+        recordStatus.textContent = `🔴 录制中... ${recordedEvents.length} 事件`;
+        recordStatus.className = 'record-status recording';
+      } else if (isPlaying) {
+        recordStatus.textContent = '▶ 播放中...';
+        recordStatus.className = 'record-status playing';
+      } else if (recordedEvents.length > 0) {
+        recordStatus.textContent = `已录制 ${recordedEvents.length} 事件，可播放或保存`;
+        recordStatus.className = 'record-status';
+      } else {
+        recordStatus.textContent = '✅ MIDI 已连接，开始弹奏录制';
+        recordStatus.className = 'record-status';
+      }
+    }
+
+    function startRecording() {
+      if (!midiConnected) { alert('请先连接 MIDI 键盘！'); return; }
+      if (isPlaying) stopPlayback();
+      recordedEvents = [];
+      recordStartTime = Date.now();
+      isRecording = true;
+      isPlaying = false;
+      recBtn.classList.add('active');
+      playBtn.disabled = true;
+      stopBtn.disabled = false;
+      saveBtn.disabled = true;
+      currentSongEvents = null;
+      updateProgress(0, 0, null);
+      updateRecordStatus();
+    }
+
+    function stopRecording() {
+      isRecording = false;
+      recBtn.classList.remove('active');
+      playBtn.disabled = recordedEvents.length === 0;
+      stopBtn.disabled = true;
+      saveBtn.disabled = recordedEvents.length === 0;
+      currentSongEvents = recordedEvents;
+      updateProgress(0, recordedEvents.length, recordedEvents);
+      updateRecordStatus();
+    }
+
+    function playRecording() {
+      if (recordedEvents.length === 0) return;
+      if (isPlaying) { stopPlayback(); return; }
+      isPlaying = true;
+      isRecording = false;
+      playbackIndex = 0;
+      recBtn.disabled = true;
+      playBtn.textContent = '⏸';
+      stopBtn.disabled = false;
+      saveBtn.disabled = true;
+      currentSongEvents = recordedEvents;
+      updateRecordStatus();
+      playNextEvent();
+    }
+
+    function playNextEvent() {
+      if (!isPlaying || !currentSongEvents || playbackIndex >= currentSongEvents.length) {
+        stopPlayback();
+        updateRecordStatus();
+        return;
+      }
+      const ev = currentSongEvents[playbackIndex];
+      if (ev.type === 'on') {
+        if (soundEnabled) playNoteSound(ev.m, ev.v);
+        sendMIDINoteOn && sendMIDINoteOn(ev.m, ev.v);
+        displayNote('on', ev.m, ev.v);
+      } else {
+        sendMIDINoteOff && sendMIDINoteOff(ev.m, ev.v);
+        displayNote('off', ev.m, ev.v);
+      }
+      updateProgress(playbackIndex, currentSongEvents.length, currentSongEvents);
+      playbackIndex++;
+      let delay = 100;
+      if (playbackIndex < currentSongEvents.length) {
+        delay = currentSongEvents[playbackIndex].t - ev.t;
+        delay = Math.max(0, Math.min(5000, delay));
+      }
+      playbackTimeout = setTimeout(playNextEvent, delay);
+    }
+
+    function stopPlayback() {
+      isPlaying = false;
+      if (playbackTimeout) { clearTimeout(playbackTimeout); playbackTimeout = null; }
+      playBtn.textContent = '▶';
+      recBtn.disabled = false;
+      playBtn.disabled = recordedEvents.length === 0;
+      stopBtn.disabled = true;
+      saveBtn.disabled = recordedEvents.length === 0;
+      updateProgress(playbackIndex, currentSongEvents ? currentSongEvents.length : 0, currentSongEvents);
+    }
+
+    function clearDisplay() {
+      currentNoteEl.textContent = '--';
+      currentNoteEl.classList.remove('off');
+      currentOctaveEl.textContent = '按下琴键开始';
+      velDisplayEl.textContent = '';
+    }
+
+    function saveRecording() {
+      if (recordedEvents.length === 0) return;
+      const name = '我的作品 ' + (savedSongs.length + 1);
+      const song = { name, events: recordedEvents, date: new Date().toLocaleDateString() };
+      savedSongs.push(song);
+      localStorage.setItem('piano_recordings_v2', JSON.stringify(savedSongs));
+      renderSongList();
+      recordStatus.textContent = `💾 "${name}" 已保存！`;
+      updateRecordStatus();
+    }
+
+    function playSong(index) {
+      const song = savedSongs[index];
+      if (!song) return;
+      if (isPlaying) stopPlayback();
+      currentPlayingIndex = index;
+      currentSongEvents = song.events;
+      renderSongList();
+      isPlaying = true;
+      isRecording = false;
+      playbackIndex = 0;
+      recBtn.disabled = true;
+      playBtn.textContent = '⏸';
+      stopBtn.disabled = false;
+      saveBtn.disabled = true;
+      recordStatus.textContent = `▶ ${song.name}`;
+      recordStatus.className = 'record-status playing';
+      playNextEvent();
+    }
+
+    function deleteSong(index) {
+      if (!confirm('确定删除这首曲子？')) return;
+      savedSongs.splice(index, 1);
+      localStorage.setItem('piano_recordings_v2', JSON.stringify(savedSongs));
+      renderSongList();
+    }
+
+    function renderSongList() {
+      if (savedSongs.length === 0) {
+        songListEl.innerHTML = '<div class="empty-list">还没有保存的曲目<br>用 MIDI 键盘录制吧！</div>';
+        return;
+      }
+      songListEl.innerHTML = savedSongs.map((song, i) => `
+        <div class="song-item ${currentPlayingIndex === i ? 'playing' : ''}" onclick="playSong(${i})">
+          <span class="song-icon">🎹</span>
+          <div class="song-info">
+            <div class="song-name">${song.name}</div>
+            <div class="song-meta">${song.events.length}事件 · ${song.date}</div>
+          </div>
+          <button class="edit-btn" onclick="event.stopPropagation(); editSong(${i})" title="编辑">✏️</button>
+          <button class="export-btn" onclick="event.stopPropagation(); exportSong(${i})" title="导出">📤</button>
+          <button class="del-btn" onclick="event.stopPropagation(); deleteSong(${i})">×</button>
+        </div>
+      `).join('');
+    }
+
+    function editSong(index) {
+      const song = savedSongs[index];
+      if (!song) return;
+      const newName = prompt('请输入新的曲名：', song.name);
+      if (!newName || newName === song.name) return;
+      savedSongs[index].name = newName;
+      localStorage.setItem('piano_recordings_v2', JSON.stringify(savedSongs));
+      renderSongList();
+    }
+
+    recBtn.addEventListener('click', () => { if (isRecording) stopRecording(); else startRecording(); });
+    playBtn.addEventListener('click', playRecording);
+    stopBtn.addEventListener('click', () => { stopPlayback(); });
+    saveBtn.addEventListener('click', saveRecording);
+
+    window.handleKeyOn = handleKeyOn;
+    window.handleKeyOff = handleKeyOff;
+
+    // =====================
+    // MIDI 导入
+    // =====================
+    const importMidiBtn = document.getElementById('importMidiBtn');
+    const importMidiInput = document.getElementById('importMidiInput');
+
+    importMidiBtn.addEventListener('click', () => importMidiInput.click());
+    importMidiInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const events = parseMidiFile(ev.target.result, file.name);
+          if (events && events.length > 0) {
+            recordedEvents = events;
+            currentSongEvents = events;
+            playBtn.disabled = false;
+            saveBtn.disabled = false;
+            updateRecordStatus();
+            recordStatus.textContent = `📥 已导入 ${events.length} 事件`;
+            updateProgress(0, events.length, events);
+          } else {
+            alert('未能解析MIDI文件或文件中没有音符事件');
+          }
+        } catch (err) {
+          alert('解析MIDI文件失败: ' + err.message);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+      e.target.value = '';
+    });
+
+    function parseMidiFile(buffer, fileName) {
+      const view = new DataView(buffer);
+      const events = [];
+      if (readStr(view, 0, 4) !== 'MThd') throw new Error('无效的MIDI文件');
+      const headerLen = view.getUint32(4, false);
+      const format = view.getUint16(8, false);
+      const numTracks = view.getUint16(10, false);
+      const ticksPerQuarter = view.getUint16(12, false);
+      if (ticksPerQuarter === 0) throw new Error('不支持的TicksPerQuarter');
+
+      let offset = 8 + headerLen;
+      const defTempo = 500000;
+
+      for (let track = 0; track < numTracks; track++) {
+        if (readStr(view, offset, 4) !== 'MTrk') break;
+        const trackLen = view.getUint32(offset + 4, false);
+        offset += 8;
+        const trackEnd = offset + trackLen;
+        let trackTicks = 0;
+        const runningStatus = { cmd: 0 };
+
+        while (offset < trackEnd) {
+          const delta = readVarLen(view, offset);
+          offset += delta.bytes;
+          trackTicks += delta.value;
+          let m = view.getUint8(offset);
+          offset++;
+          let status = m;
+          if ((m & 0x80) === 0) { status = runningStatus.cmd; offset--; }
+          else { runningStatus.cmd = m; }
+          const cmd = status & 0xf0;
+
+          if (cmd === 0x90) {
+            const note = view.getUint8(offset);
+            const velocity = view.getUint8(offset + 1);
+            offset += 2;
+            const t = Math.round(trackTicks / ticksPerQuarter * defTempo / 1000);
+            if (velocity > 0) events.push({ type: 'on', m: note, v: velocity, t });
+            else events.push({ type: 'off', m: note, v: 0, t });
+          } else if (cmd === 0x80) {
+            const note = view.getUint8(offset);
+            const velocity = view.getUint8(offset + 1);
+            offset += 2;
+            const t = Math.round(trackTicks / ticksPerQuarter * defTempo / 1000);
+            events.push({ type: 'off', m: note, v: velocity, t });
+          } else if (cmd === 0xa0) { offset += 2; }
+          else if (cmd === 0xb0) { offset += 2; }
+          else if (cmd === 0xc0) { offset++; }
+          else if (cmd === 0xd0) { offset++; }
+          else if (cmd === 0xe0) { offset += 2; }
+          else if (status === 0xff) {
+            const metaType = view.getUint8(offset); offset++;
+            const metaLen = readVarLen(view, offset);
+            offset += metaLen.bytes + metaLen.value;
+          } else if (status === 0xf0 || status === 0xf7) {
+            const sysexLen = readVarLen(view, offset);
+            offset += sysexLen.bytes + sysexLen.value;
+          }
+        }
+        offset = trackEnd;
+      }
+      events.sort((a, b) => a.t - b.t);
+      return events;
+    }
+
+    function readStr(view, offset, len) {
+      let s = '';
+      for (let i = 0; i < len; i++) s += String.fromCharCode(view.getUint8(offset + i));
+      return s;
+    }
+
+    function readVarLen(view, offset) {
+      let value = 0, bytes = 0, b;
+      do { b = view.getUint8(offset + bytes); bytes++; value = (value << 7) + (b & 0x7f); }
+      while ((b & 0x80) !== 0 && bytes < 4);
+      return { value, bytes };
+    }
+
+    // =====================
+    // MIDI 导出
+    // =====================
+    function exportSong(index) {
+      const song = savedSongs[index];
+      if (!song) return;
+      exportMidi(song.events, song.name);
+    }
+
+    function exportMidi(events, fileName) {
+      const ticksPerQuarter = 480;
+      const msToTicks = (ms) => Math.round(ms / 1000 * ticksPerQuarter * 2);
+      const trackEvents = [];
+      let lastTick = 0;
+      events.forEach(ev => {
+        const tick = msToTicks(ev.t);
+        const delta = tick - lastTick;
+        lastTick = tick;
+        const deltaBytes = encodeVarLen(delta);
+        if (ev.type === 'on') trackEvents.push(...deltaBytes, 0x90, ev.m, ev.v);
+        else trackEvents.push(...deltaBytes, 0x80, ev.m, ev.v || 0);
+      });
+      trackEvents.push(0x00, 0xff, 0x2f, 0x00);
+      const trackData = new Uint8Array(trackEvents);
+      const trackLen = trackData.length;
+      const trackChunk = new Uint8Array(8 + trackLen);
+      const tc = new TextEncoder();
+      tc.encodeInto('MTrk', trackChunk);
+      trackChunk[4] = (trackLen >> 24) & 0xff; trackChunk[5] = (trackLen >> 16) & 0xff;
+      trackChunk[6] = (trackLen >> 8) & 0xff; trackChunk[7] = trackLen & 0xff;
+      trackChunk.set(trackData, 8);
+      const headerChunk = new Uint8Array(14);
+      tc.encodeInto('MThd', headerChunk);
+      headerChunk[4] = 0; headerChunk[5] = 0; headerChunk[6] = 0; headerChunk[7] = 6;
+      headerChunk[8] = 0; headerChunk[9] = 0; headerChunk[10] = 0; headerChunk[11] = 1;
+      headerChunk[12] = (ticksPerQuarter >> 8) & 0xff; headerChunk[13] = ticksPerQuarter & 0xff;
+      const midi = new Uint8Array(headerChunk.length + trackChunk.length);
+      midi.set(headerChunk); midi.set(trackChunk, headerChunk.length);
+      const blob = new Blob([midi], { type: 'audio/midi' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = fileName + '.mid'; a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function encodeVarLen(value) {
+      const bytes = [];
+      let v = value;
+      bytes.push(v & 0x7f);
+      while ((v >>= 7) > 0) bytes.push((v & 0x7f) | 0x80);
+      bytes.reverse();
+      return bytes;
+    }
+
+    // 初始化
+    renderSongList();
+    initMIDI();
+    updateProgress(0, 0, null);
+    clearDisplay();
+  </script>
+</body>
+
+</html>
