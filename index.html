@@ -4,78 +4,113 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>🎹 钢琴识谱练习</title>
+  <title>钢琴识谱练习</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
 
-  <button id="ToggleMenuBtn">⚙️设置项</button>
+  <!-- 设置按钮 - 右上角悬浮 -->
+  <button id="SettingsBtn" class="settings-btn" aria-label="设置">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="3"></circle>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+    </svg>
+  </button>
 
-  <div class="controls" id="ControlsMenu">
-    <h1>🎹 钢琴识谱练习</h1>
-    <p class="sub">看五线谱 · 找到音 · 按琴键</p>
+  <!-- 遮罩层 -->
+  <div id="SettingsOverlay" class="settings-overlay"></div>
 
-    <div id="midiStatus">🎹 等待 MIDI 设备连接...</div>
-
-    <div class="rb" id="DiffBox">
-      <button data-d="easy" class="on">🌱 单八度</button>
-      <button data-d="med">🌲 双八度</button>
-      <button data-d="hard">🔥 三八度</button>
-      <button data-d="custom">⚙️ 手动范围</button>
-      <button data-d="free">🎨 乱点模式</button>
+  <!-- 设置面板 - 右侧滑出 -->
+  <div id="SettingsPanel" class="settings-panel">
+    <div class="settings-header">
+      <h2>设置</h2>
+      <button id="CloseSettingsBtn" class="close-btn" aria-label="关闭">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
     </div>
 
-    <div id="CustomRangeUI"
-      style="display: none; gap: 10px; margin-bottom: 10px; align-items: center; background: #fff; padding: 10px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-      <span style="font-size: 0.8rem; font-weight: bold; color: #546e7a;">起始音:</span>
-      <select id="startNote" style="padding: 4px; border-radius: 4px; border: 1px solid #90a4ae;"></select>
-      <span style="font-size: 0.8rem; font-weight: bold; color: #546e7a;">结束音:</span>
-      <select id="endNote" style="padding: 4px; border-radius: 4px; border: 1px solid #90a4ae;"></select>
-    </div>
-
-    <div class="rb" id="RB">
-      <button data-r="rh" class="on">🎶 高音谱表练习</button>
-      <button data-r="lh">🎶 低音谱表练习</button>
-    </div>
-
-    <div class="rb" id="SoundBox">
-      <button data-s="on" class="on">🔊 声音</button>
-      <button data-s="off">🔇 静音</button>
-    </div>
-
-    <div class="rb" id="AccidBox">
-      <button data-a="on" class="on">#️⃣ 含升号</button>
-      <button data-a="off">⚪ 仅白键</button>
-    </div>
-
-    <div class="sc">
-      <div>
-        <div class="v" id="sOk">0</div>
-        <div class="l">✅ 正确</div>
+    <div class="settings-content">
+      <!-- 难度选择 -->
+      <div class="settings-section">
+        <h3>难度</h3>
+        <div class="btn-group" id="DiffBox">
+          <button data-d="easy" class="on">🌱 单八度</button>
+          <button data-d="med">🌲 双八度</button>
+          <button data-d="hard">🔥 三八度</button>
+          <button data-d="custom">⚙️ 手动范围</button>
+          <button data-d="free">🎨 乱点模式</button>
+        </div>
       </div>
-      <div>
-        <div class="v" id="sSt">0</div>
-        <div class="l">🔥 连对</div>
+
+      <!-- 手动范围 -->
+      <div id="CustomRangeUI" class="settings-section custom-range" style="display: none;">
+        <h3>自定义范围</h3>
+        <div class="range-selectors">
+          <select id="startNote"></select>
+          <span>至</span>
+          <select id="endNote"></select>
+        </div>
       </div>
-      <div>
-        <div class="v" id="sAl">0</div>
-        <div class="l">🎯 已练</div>
+
+      <!-- 谱表模式 -->
+      <div class="settings-section">
+        <h3>谱表</h3>
+        <div class="btn-group" id="RB">
+          <button data-r="rh" class="on">🎶 高音谱表</button>
+          <button data-r="lh">🎶 低音谱表</button>
+        </div>
+      </div>
+
+      <!-- 声音 -->
+      <div class="settings-section">
+        <h3>声音</h3>
+        <div class="btn-group" id="SoundBox">
+          <button data-s="on" class="on">🔊 开启</button>
+          <button data-s="off">🔇 静音</button>
+        </div>
+      </div>
+
+      <!-- 升降号 -->
+      <div class="settings-section">
+        <h3>音符</h3>
+        <div class="btn-group" id="AccidBox">
+          <button data-a="on" class="on">#️⃣ 含升降号</button>
+          <button data-a="off">⚪ 仅白键</button>
+        </div>
       </div>
     </div>
-
-    <button id="CloseMenuBtn" class="close-menu">⬅️ 隐藏面板</button>
   </div>
 
+  <!-- 主显示区域 -->
   <div class="main-area">
-    <div class="fb" id="fb"></div>
+    <!-- 顶部状态栏 -->
+    <div class="top-bar">
+      <div id="midiStatus" class="midi-status">🎹 等待 MIDI</div>
+      <div class="stats">
+        <div class="stat">
+          <span class="stat-num" id="sOk">0</span>
+          <span class="stat-text">正确</span>
+        </div>
+        <div class="stat">
+          <span class="stat-num" id="sSt">0</span>
+          <span class="stat-text">连对</span>
+        </div>
+        <div class="stat">
+          <span class="stat-num" id="sAl">0</span>
+          <span class="stat-text">已练</span>
+        </div>
+      </div>
+    </div>
 
     <div class="sb">
       <canvas id="S"></canvas>
-      <!-- <div class="hint" id="hint">🎵 点击琴键开始</div> -->
     </div>
-
-    <div class="pw">
+    <div class="feedback" id="fb"></div>
+    <div class="piano-wrapper">
       <div class="piano" id="PI"></div>
     </div>
   </div>

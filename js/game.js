@@ -20,7 +20,6 @@ let phantomLoop = null;
 let score = { ok: 0, streak: 0, maxStreak: 0, total: 0 };
 
 const fb = document.getElementById('fb');
-const hint = document.getElementById('hint');
 const sOk = document.getElementById('sOk');
 const sSt = document.getElementById('sSt');
 const sAl = document.getElementById('sAl');
@@ -38,7 +37,6 @@ function generateStage() {
     leftNote = null;
     fb.textContent = '🎨 自由模式：随便乱弹，看着音符飞舞吧！';
     fb.className = 'fb ok';
-    hint.textContent = '🎵 实时显示你的弹奏位置';
     renderCanvas();
     return;
   }
