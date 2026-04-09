@@ -18,6 +18,42 @@ body {
   touch-action: pan-y;
 }
 
+/* ========== 全屏按钮 ========== */
+.fullscreen-btn {
+  position: fixed;
+  top: 16px;
+  right: 70px;
+  z-index: 200;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  color: #333;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.fullscreen-btn:hover {
+  background: #fff;
+  transform: scale(1.05);
+}
+
+.fullscreen-btn:active {
+  transform: scale(0.95);
+}
+
+.fullscreen-btn.active {
+  background: rgba(25, 118, 210, 0.9);
+  border-color: rgba(25, 118, 210, 0.9);
+  color: #fff;
+}
+
 /* ========== 设置按钮 ========== */
 .settings-btn {
   position: fixed;
@@ -382,7 +418,6 @@ canvas#S {
   border-radius: 0 0 4px 4px;
   cursor: pointer;
   position: relative;
-  touch-action: none;
   transition: background 0.1s ease;
 }
 
@@ -427,7 +462,6 @@ canvas#S {
   cursor: pointer;
   z-index: 2;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
-  touch-action: none;
   transition: background 0.1s ease;
 }
 

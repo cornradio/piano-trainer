@@ -597,7 +597,6 @@ canvas#S {
   border-radius: 0 0 4px 4px;
   cursor: pointer;
   position: relative;
-  touch-action: none;
   transition: background 0.1s ease;
 }
 
@@ -647,7 +646,6 @@ canvas#S {
   cursor: pointer;
   z-index: 2;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
-  touch-action: none;
   transition: background 0.1s ease;
 }
 

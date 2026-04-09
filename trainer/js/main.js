@@ -1,6 +1,35 @@
 // 程序总入口
 let currentDifficulty = 'easy';
 
+// 全屏功能
+function setupFullscreen() {
+  const btn = document.getElementById('FullscreenBtn');
+  if (!btn) return;
+
+  btn.addEventListener('click', () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().then(() => {
+        btn.classList.add('active');
+      }).catch(err => {
+        console.log('全屏失败:', err);
+      });
+    } else {
+      document.exitFullscreen().then(() => {
+        btn.classList.remove('active');
+      });
+    }
+  });
+
+  // 监听全屏变化事件
+  document.addEventListener('fullscreenchange', () => {
+    if (document.fullscreenElement) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+}
+
 const SETTINGS_KEY = 'piano_trainer_v1_settings';
 
 function saveSettings() {
@@ -36,6 +65,9 @@ function closeSettings() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // 初始化全屏按钮
+  setupFullscreen();
+
   const saved = loadSettings();
 
   // 1. 初始化钢琴键盘

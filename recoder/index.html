@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
   <title>钢琴录制器</title>
   <link rel="stylesheet" href="css/style.css">
   <style>
@@ -432,11 +432,15 @@
       .song-list {
         height: 100%;
       }
-    }
 
-      .song-list-header {
-        position: sticky;
-        top: 0;
+      #FullscreenBtn {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      #FullscreenBtn.active {
+        background: #e3f2fd;
       }
     }
   </style>
@@ -448,6 +452,7 @@
     <div class="page-header">
       <h1>🎹 钢琴录制器</h1>
       <div class="header-actions">
+        <button id="FullscreenBtn">⛶ 全屏</button>
         <button id="importMidiBtn">📂 导入</button>
         <input type="file" id="importMidiInput" accept=".mid,.midi">
         <a href="index.html">返回</a>
@@ -1018,6 +1023,36 @@
       while ((v >>= 7) > 0) bytes.push((v & 0x7f) | 0x80);
       bytes.reverse();
       return bytes;
+    }
+
+    // 全屏功能
+    const fullscreenBtn = document.getElementById('FullscreenBtn');
+    if (fullscreenBtn) {
+      fullscreenBtn.addEventListener('click', () => {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().then(() => {
+            fullscreenBtn.classList.add('active');
+            fullscreenBtn.textContent = '⛶ 退出';
+          }).catch(err => {
+            console.log('全屏失败:', err);
+          });
+        } else {
+          document.exitFullscreen().then(() => {
+            fullscreenBtn.classList.remove('active');
+            fullscreenBtn.textContent = '⛶ 全屏';
+          });
+        }
+      });
+
+      document.addEventListener('fullscreenchange', () => {
+        if (document.fullscreenElement) {
+          fullscreenBtn.classList.add('active');
+          fullscreenBtn.textContent = '⛶ 退出';
+        } else {
+          fullscreenBtn.classList.remove('active');
+          fullscreenBtn.textContent = '⛶ 全屏';
+        }
+      });
     }
 
     // 初始化
