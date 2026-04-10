@@ -58,8 +58,8 @@ function drawGameStaff(mode, rightNote, leftNote, isDone, feedbackState, wrongNo
     const tyTop = 50;
     const tyBot = 160;
     drawGrandStaffBrace(ctx, tyTop, tyBot, logicW);
-    drawStaffBase(ctx, tyTop, rightNote, 't', logicW, nColor, (wrongNote && wrongNote.m >= 60 ? wrongNote : null), phantoms.filter(p => p.note.m >= 60));
-    drawStaffBase(ctx, tyBot, leftNote, 'b', logicW, nColor, (wrongNote && wrongNote.m < 60 ? wrongNote : null), phantoms.filter(p => p.note.m < 60));
+    drawStaffBase(ctx, tyTop, rightNote, 't', logicW, nColor, (wrongNote && wrongNote.m >= 60 ? wrongNote : null), phantoms.filter(p => (p.noteM || p.note.m) >= 60));
+    drawStaffBase(ctx, tyBot, leftNote, 'b', logicW, nColor, (wrongNote && wrongNote.m < 60 ? wrongNote : null), phantoms.filter(p => (p.noteM || p.note.m) < 60));
   } else if (mode === 'rh') {
     const ty = 100;
     drawStaffBase(ctx, ty, rightNote, 't', logicW, nColor, wrongNote, phantoms);

@@ -676,7 +676,6 @@
         currentNoteEl.textContent = '--';
         currentOctaveEl.textContent = '按下琴键开始';
         velDisplayEl.textContent = '';
-        // 清空五线谱
         if (staffCanvas) {
           const ctx = staffCanvas.getContext('2d');
           ctx.clearRect(0, 0, staffCanvas.width, staffCanvas.height);
@@ -686,39 +685,92 @@
 
       // 按MIDI序号排序后显示
       activeNotes.sort((a, b) => a - b);
-      const names = activeNotes.map(m => formatNoteName(m)).join('+');
-      currentNoteEl.textContent = names;
+
+      // 分离左右手
+      const rightNotes = [];
+      const leftNotes = [];
+      activeNotes.forEach(m => {
+        if (m >= 60) {
+          rightNotes.push(m);
+        } else {
+          leftNotes.push(m);
+        }
+      });
+
+      // 文字显示：左手 | 右手，给左手固定宽度防止跳动
+      const leftNames = leftNotes.map(m => formatNoteName(m)).join('+');
+      const rightNames = rightNotes.map(m => formatNoteName(m)).join('+');
+      let displayText;
+      if (leftNames && rightNames) {
+        // 左手固定宽度6字符，不足补空格
+        const leftPad = leftNames.padEnd(6, ' ');
+        displayText = leftPad + '| ' + rightNames;
+      } else if (leftNames) {
+        displayText = leftNames.padEnd(6, ' ') + '| ';
+      } else {
+        displayText = '      | ' + rightNames;
+      }
+      currentNoteEl.textContent = displayText;
       currentOctaveEl.textContent = `MIDI: ${activeNotes.join(',')}`;
       velDisplayEl.textContent = '';
 
-      // 绘制五线谱 - 只显示按下的音符
+      // 绘制五线谱
       if (staffCanvas && typeof drawGameStaff === 'function') {
-        const rightNotes = [];
-        const leftNotes = [];
+        const rightNoteData = [];
+        const leftNoteData = [];
 
-        activeNotes.forEach(m => {
+        rightNotes.forEach(m => {
           const info = NOTES_DATA.find(n => n.m === m);
-          if (info) {
-            const noteData = { ...info, useFlat: Math.random() > 0.5 };
-            if (m >= 60) {
-              rightNotes.push(noteData);
-            } else {
-              leftNotes.push(noteData);
-            }
-          }
+          if (info) rightNoteData.push({ ...info, useFlat: Math.random() > 0.5 });
         });
 
-        // 只显示一个音符（优先显示右手第一个或左手第一个）
-        const mode = rightNotes.length > 0 ? 'rh' : (leftNotes.length > 0 ? 'lh' : 'rh');
-        const rightNote = rightNotes.length > 0 ? rightNotes[0] : null;
-        const leftNote = leftNotes.length > 0 ? leftNotes[0] : null;
+        leftNotes.forEach(m => {
+          const info = NOTES_DATA.find(n => n.m === m);
+          if (info) leftNoteData.push({ ...info, useFlat: Math.random() > 0.5 });
+        });
 
-        if (activeNotes.length >= 2) {
-          // 多音符时显示双行谱表
-          drawGameStaff('both', rightNote, leftNote, false, '', null, [], staffCanvas);
-        } else {
-          // 单音符
-          drawGameStaff(mode, rightNote || leftNote, null, false, '', null, [], staffCanvas);
+        if (rightNoteData.length > 0 && leftNoteData.length > 0) {
+          // 双手 - 带 MIDI 值以便过滤
+          const rightPhantoms = rightNoteData.slice(1).map(n => ({
+            note: n,
+            noteM: n.m,  // 存储 MIDI 值
+            x: 110,
+            alpha: 0.5
+          }));
+          const leftPhantoms = leftNoteData.slice(1).map(n => ({
+            note: n,
+            noteM: n.m,  // 存储 MIDI 值
+            x: 110,
+            alpha: 0.5
+          }));
+          drawGameStaff('both', rightNoteData[0], leftNoteData[0], false, '', null,
+            [...rightPhantoms, ...leftPhantoms], staffCanvas);
+        } else if (rightNoteData.length > 0) {
+          if (rightNoteData.length === 1) {
+            drawGameStaff('rh', rightNoteData[0], null, false, '', null, [], staffCanvas);
+          } else {
+            // 同一竖行和弦显示
+            const phantoms = rightNoteData.slice(1).map(n => ({
+              note: n,
+              noteM: n.m,
+              x: 110,
+              alpha: 0.5
+            }));
+            drawGameStaff('rh', rightNoteData[0], null, false, '', null, phantoms, staffCanvas);
+          }
+        } else if (leftNoteData.length > 0) {
+          if (leftNoteData.length === 1) {
+            drawGameStaff('lh', null, leftNoteData[0], false, '', null, [], staffCanvas);
+          } else {
+            // 同一竖行和弦显示
+            const phantoms = leftNoteData.slice(1).map(n => ({
+              note: n,
+              noteM: n.m,
+              x: 110,
+              alpha: 0.5
+            }));
+            drawGameStaff('lh', null, leftNoteData[0], false, '', null, phantoms, staffCanvas);
+          }
         }
       }
     }
