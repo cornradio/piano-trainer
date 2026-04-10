@@ -462,15 +462,14 @@
     <div class="recorder-main">
       <!-- 控制面板 -->
       <div class="control-panel">
-        <div class="control-row" style="gap:8px;align-items:center;flex-wrap:wrap;">
-          <div class="midi-status-bar" id="midiStatus" style="flex:1;min-width:120px;">🎹 等待 MIDI 设备...</div>
+        <div class="control-row" style="gap:6px;align-items:center;flex-wrap:wrap;">
+          <div class="midi-status-bar" id="midiStatus" style="flex:1;min-width:100px;">🎹 等待 MIDI...</div>
           <label class="sound-toggle">
             <input type="checkbox" id="soundToggle" checked>
-            <span>🔇</span>
+            <span>🔊</span>
           </label>
-          <span style="font-size:0.7rem;color:#666;white-space:nowrap;">+</span>
-          <input type="range" id="volumeBoost" min="0" max="50" value="0" style="width:60px;">
-          <span id="volumeBoostVal" style="font-size:0.7rem;color:#666;min-width:24px;">0</span>
+          <input type="range" id="volumeBoost" min="0" max="50" value="0" style="width:50px;">
+          <span id="volumeBoostVal" style="font-size:0.7rem;color:#666;min-width:20px;">+0</span>
         </div>
 
         <div class="note-display">
@@ -553,8 +552,9 @@
     let currentPlayingIndex = -1;
     let midiConnected = false;
     let currentSongEvents = null;
+    let activeNotes = []; // 追踪当前按下的音符
 
-    // 声音开关 - 从 localStorage 读取或默认开启
+    // 获取音符显示名 - 从 localStorage 读取或默认开启
     const savedSound = localStorage.getItem('piano_sound_enabled');
     const initialSound = savedSound === null ? true : savedSound === 'true';
     soundEnabled = initialSound;
@@ -565,7 +565,7 @@
     const savedBoost = parseInt(localStorage.getItem('piano_velocity_boost') || '0');
     velocityBoost = savedBoost;
     volumeBoost.value = savedBoost;
-    volumeBoostVal.textContent = savedBoost;
+    volumeBoostVal.textContent = '+' + savedBoost;
 
     // 点击任意按钮时初始化音频
     function initAudioOnFirstClick() {
@@ -579,12 +579,10 @@
       localStorage.setItem('piano_sound_enabled', soundEnabled);
       soundToggle.parentElement.querySelector('span').textContent = soundEnabled ? '🔊' : '🔇';
     });
-
-    // 力度增幅滑块
     volumeBoost.addEventListener('input', () => {
       const val = parseInt(volumeBoost.value);
       velocityBoost = val;
-      volumeBoostVal.textContent = val;
+      volumeBoostVal.textContent = '+' + val;
       localStorage.setItem('piano_velocity_boost', val);
     });
 
@@ -636,42 +634,15 @@
       return baseName + octave;
     }
 
-    // 显示音符 - 使用 requestAnimationFrame 异步渲染
-    // 从 staff.js 获取 canvas，因为 staff.js 移除了全局变量
-    function renderNote(params) {
-      const { type, info, m, v } = params;
-      const staffCanvas = document.getElementById('staffCanvas');
-      if (type === 'on') {
-        currentNoteEl.textContent = formatNoteName(m);
-        currentNoteEl.classList.remove('off');
-        currentOctaveEl.textContent = `MIDI: ${m}`;
-        velDisplayEl.textContent = `力度: ${v}`;
-
-        // 绘制五线谱 - 只显示当前按下的音符
-        if (info && staffCanvas) {
-          // 随机决定显示升号还是降号
-          const noteData = { ...info, useFlat: Math.random() > 0.5 };
-          const mode = m >= 60 ? 'rh' : 'lh';
-          drawGameStaff(mode, mode === 'rh' ? noteData : null, mode === 'lh' ? noteData : null, false, '', null, [], staffCanvas);
-        }
-      } else {
-        currentNoteEl.textContent = formatNoteName(m);
-        currentNoteEl.classList.add('off');
-        currentOctaveEl.textContent = `MIDI: ${m}`;
-        velDisplayEl.textContent = '';
-      }
-    }
-
-    function displayNote(type, m, v) {
-      const info = NOTES_DATA.find(n => n.m === m);
-      requestAnimationFrame(() => renderNote({ type, info, m, v }));
-    }
-
     // NOTE ON
     function handleKeyOn(m, velocity = 100) {
+      // 添加到活动音符列表
+      if (!activeNotes.includes(m)) {
+        activeNotes.push(m);
+      }
       if (soundEnabled) playNoteSound(m, velocity);
       sendMIDINoteOn && sendMIDINoteOn(m, velocity);
-      displayNote('on', m, velocity);
+      refreshDisplay();
       if (isRecording) {
         const t = Date.now() - recordStartTime;
         recordedEvents.push({ type: 'on', m, v: velocity, t });
@@ -682,13 +653,73 @@
 
     // NOTE OFF
     function handleKeyOff(m, velocity = 0) {
+      // 从活动音符列表移除
+      const idx = activeNotes.indexOf(m);
+      if (idx > -1) {
+        activeNotes.splice(idx, 1);
+      }
       sendMIDINoteOff && sendMIDINoteOff(m, velocity);
-      displayNote('off', m, velocity);
+      refreshDisplay();
       if (isRecording) {
         const t = Date.now() - recordStartTime;
         recordedEvents.push({ type: 'off', m, v: velocity, t });
         recordStatus.textContent = `🔴 录制中... ${recordedEvents.length} 事件`;
         updateProgress(recordedEvents.length, recordedEvents.length, recordedEvents);
+      }
+    }
+
+    // 刷新显示当前按下的所有音符
+    function refreshDisplay() {
+      const staffCanvas = document.getElementById('staffCanvas');
+
+      if (activeNotes.length === 0) {
+        currentNoteEl.textContent = '--';
+        currentOctaveEl.textContent = '按下琴键开始';
+        velDisplayEl.textContent = '';
+        // 清空五线谱
+        if (staffCanvas) {
+          const ctx = staffCanvas.getContext('2d');
+          ctx.clearRect(0, 0, staffCanvas.width, staffCanvas.height);
+        }
+        return;
+      }
+
+      // 按MIDI序号排序后显示
+      activeNotes.sort((a, b) => a - b);
+      const names = activeNotes.map(m => formatNoteName(m)).join('+');
+      currentNoteEl.textContent = names;
+      currentOctaveEl.textContent = `MIDI: ${activeNotes.join(',')}`;
+      velDisplayEl.textContent = '';
+
+      // 绘制五线谱 - 只显示按下的音符
+      if (staffCanvas && typeof drawGameStaff === 'function') {
+        const rightNotes = [];
+        const leftNotes = [];
+
+        activeNotes.forEach(m => {
+          const info = NOTES_DATA.find(n => n.m === m);
+          if (info) {
+            const noteData = { ...info, useFlat: Math.random() > 0.5 };
+            if (m >= 60) {
+              rightNotes.push(noteData);
+            } else {
+              leftNotes.push(noteData);
+            }
+          }
+        });
+
+        // 只显示一个音符（优先显示右手第一个或左手第一个）
+        const mode = rightNotes.length > 0 ? 'rh' : (leftNotes.length > 0 ? 'lh' : 'rh');
+        const rightNote = rightNotes.length > 0 ? rightNotes[0] : null;
+        const leftNote = leftNotes.length > 0 ? leftNotes[0] : null;
+
+        if (activeNotes.length >= 2) {
+          // 多音符时显示双行谱表
+          drawGameStaff('both', rightNote, leftNote, false, '', null, [], staffCanvas);
+        } else {
+          // 单音符
+          drawGameStaff(mode, rightNote || leftNote, null, false, '', null, [], staffCanvas);
+        }
       }
     }
 
@@ -750,6 +781,7 @@
     function playRecording() {
       if (recordedEvents.length === 0) return;
       if (isPlaying) { stopPlayback(); return; }
+      activeNotes = []; // 清空音符列表
       isPlaying = true;
       isRecording = false;
       playbackIndex = 0;
@@ -770,12 +802,9 @@
       }
       const ev = currentSongEvents[playbackIndex];
       if (ev.type === 'on') {
-        if (soundEnabled) playNoteSound(ev.m, ev.v);
-        sendMIDINoteOn && sendMIDINoteOn(ev.m, ev.v);
-        displayNote('on', ev.m, ev.v);
+        handleKeyOn(ev.m, ev.v);
       } else {
-        sendMIDINoteOff && sendMIDINoteOff(ev.m, ev.v);
-        displayNote('off', ev.m, ev.v);
+        handleKeyOff(ev.m, 0);
       }
       updateProgress(playbackIndex, currentSongEvents.length, currentSongEvents);
       playbackIndex++;
@@ -800,9 +829,9 @@
 
     function clearDisplay() {
       currentNoteEl.textContent = '--';
-      currentNoteEl.classList.remove('off');
       currentOctaveEl.textContent = '按下琴键开始';
       velDisplayEl.textContent = '';
+      activeNotes = [];
     }
 
     function saveRecording() {
@@ -823,6 +852,7 @@
       currentPlayingIndex = index;
       currentSongEvents = song.events;
       renderSongList();
+      activeNotes = []; // 清空音符列表
       isPlaying = true;
       isRecording = false;
       playbackIndex = 0;

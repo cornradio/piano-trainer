@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(openssl req:*)"
+      "Bash(openssl req:*)",
+      "WebFetch(domain:minimax-algeng-chat-tts.oss-cn-wulanchabu.aliyuncs.com)"
     ]
   }
 }
