@@ -103,7 +103,15 @@ function getMIDIMessage(message) {
 // 发送 MIDI 音符到输出设备
 function sendMIDINoteOn(note, velocity = 100) {
   if (midiOutput) {
-    midiOutput.send([144, note, velocity]);
+    // 应用力度增幅
+    let actualVelocity = velocity;
+    if (typeof getVelocityBoost === 'function') {
+      const boost = getVelocityBoost();
+      if (boost !== 0) {
+        actualVelocity = Math.min(127, velocity + boost);
+      }
+    }
+    midiOutput.send([144, note, actualVelocity]);
   }
 }
 

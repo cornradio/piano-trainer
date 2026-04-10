@@ -1,6 +1,7 @@
 // Web Audio API 简易声音合成
 let audioCtx = null;
 let soundEnabled = true;
+let velocityBoost = 0; // 音量增幅，0表示不增幅
 
 function initAudio() {
   if (soundEnabled && !audioCtx) {
@@ -27,8 +28,13 @@ function playNoteSound(m, velocity = 100) {
   osc.type = 'triangle';
   osc.frequency.setValueAtTime(m2f(m), audioCtx.currentTime);
 
-  // 根据力度计算音量 (0-127 转 0-1)
-  const vol = Math.min(1, (velocity / 127) * 0.7);
+  // 根据力度计算音量 (0-127 转 0-1)，并应用力度增幅
+  let actualVelocity = velocity;
+  if (velocityBoost !== 0) {
+    // 直接加到力度上
+    actualVelocity = Math.min(127, velocity + velocityBoost);
+  }
+  const vol = Math.min(1, (actualVelocity / 127) * 0.7);
 
   // 包络线形成敲击感与衰减
   gain.gain.setValueAtTime(0, audioCtx.currentTime);
@@ -44,4 +50,13 @@ function playNoteSound(m, velocity = 100) {
 
 function setSoundEnabled(val) {
   soundEnabled = val === 'on';
+}
+
+function setVelocityBoost(val) {
+  velocityBoost = val;
+  localStorage.setItem('piano_velocity_boost', val);
+}
+
+function getVelocityBoost() {
+  return velocityBoost;
 }

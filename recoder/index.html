@@ -462,12 +462,15 @@
     <div class="recorder-main">
       <!-- 控制面板 -->
       <div class="control-panel">
-        <div class="control-row">
-          <div class="midi-status-bar" id="midiStatus">🎹 等待 MIDI 设备...</div>
+        <div class="control-row" style="gap:8px;align-items:center;flex-wrap:wrap;">
+          <div class="midi-status-bar" id="midiStatus" style="flex:1;min-width:120px;">🎹 等待 MIDI 设备...</div>
           <label class="sound-toggle">
             <input type="checkbox" id="soundToggle" checked>
-            <span>🔊 声音</span>
+            <span>🔇</span>
           </label>
+          <span style="font-size:0.7rem;color:#666;white-space:nowrap;">+</span>
+          <input type="range" id="volumeBoost" min="0" max="50" value="0" style="width:60px;">
+          <span id="volumeBoostVal" style="font-size:0.7rem;color:#666;min-width:24px;">0</span>
         </div>
 
         <div class="note-display">
@@ -537,6 +540,8 @@
     const progressStart = document.getElementById('progressStart');
     const progressEnd = document.getElementById('progressEnd');
     const soundToggle = document.getElementById('soundToggle');
+    const volumeBoost = document.getElementById('volumeBoost');
+    const volumeBoostVal = document.getElementById('volumeBoostVal');
 
     let isRecording = false;
     let isPlaying = false;
@@ -554,7 +559,13 @@
     const initialSound = savedSound === null ? true : savedSound === 'true';
     soundEnabled = initialSound;
     soundToggle.checked = soundEnabled;
-    soundToggle.parentElement.querySelector('span').textContent = soundEnabled ? '🔊 声音' : '🔇 静音';
+    soundToggle.parentElement.querySelector('span').textContent = soundEnabled ? '🔊' : '🔇';
+
+    // 力度增幅 - 从 localStorage 读取或默认 0
+    const savedBoost = parseInt(localStorage.getItem('piano_velocity_boost') || '0');
+    velocityBoost = savedBoost;
+    volumeBoost.value = savedBoost;
+    volumeBoostVal.textContent = savedBoost;
 
     // 点击任意按钮时初始化音频
     function initAudioOnFirstClick() {
@@ -566,7 +577,15 @@
     soundToggle.addEventListener('change', () => {
       soundEnabled = soundToggle.checked;
       localStorage.setItem('piano_sound_enabled', soundEnabled);
-      soundToggle.parentElement.querySelector('span').textContent = soundEnabled ? '🔊 声音' : '🔇 静音';
+      soundToggle.parentElement.querySelector('span').textContent = soundEnabled ? '🔊' : '🔇';
+    });
+
+    // 力度增幅滑块
+    volumeBoost.addEventListener('input', () => {
+      const val = parseInt(volumeBoost.value);
+      velocityBoost = val;
+      volumeBoostVal.textContent = val;
+      localStorage.setItem('piano_velocity_boost', val);
     });
 
     // 格式化时间
