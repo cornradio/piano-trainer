@@ -223,9 +223,9 @@ function getKeyboardRange() {
     else if (mode === 'lh') { minK = 48; maxK = 60; } // 左手：单八度 (包含 C4)
     else { minK = 48; maxK = 72; }                    // 双手：C3-C5
   } else if (gameDifficulty === 'med') {
-    if (mode === 'rh') { minK = 60; maxK = 84; }      // 右手：双八度
-    else if (mode === 'lh') { minK = 48; maxK = 72; } // 左手：双八度
-    else { minK = 48; maxK = 84; }                    // 双手：C3-C6
+    if (mode === 'rh') { minK = 60; maxK = 84; }      // 右手：双八度 C4-C5
+    else if (mode === 'lh') { minK = 36; maxK = 60; } // 左手：双八度 C2-C4
+    else { minK = 48; maxK = 84; }                    // 双手：C3-C5
   } else if (gameDifficulty === 'custom') {
     minK = customMin; maxK = customMax;
   } else {

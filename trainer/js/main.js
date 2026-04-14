@@ -30,6 +30,20 @@ function setupFullscreen() {
   });
 }
 
+// 键盘显示/隐藏功能
+function setupKeyboardToggle() {
+  const btn = document.getElementById('KeyboardToggleBtn');
+  const pianoWrapper = document.querySelector('.piano-wrapper');
+  if (!btn || !pianoWrapper) return;
+
+  btn.addEventListener('click', () => {
+    pianoWrapper.classList.toggle('hidden');
+    btn.classList.toggle('hidden');
+    // 更新aria-label
+    btn.setAttribute('aria-label', pianoWrapper.classList.contains('hidden') ? '显示键盘' : '隐藏键盘');
+  });
+}
+
 const SETTINGS_KEY = 'piano_trainer_v1_settings';
 
 function saveSettings() {
@@ -67,6 +81,9 @@ function closeSettings() {
 document.addEventListener('DOMContentLoaded', () => {
   // 初始化全屏按钮
   setupFullscreen();
+
+  // 初始化键盘显示/隐藏按钮
+  setupKeyboardToggle();
 
   const saved = loadSettings();
 
