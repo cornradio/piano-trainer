@@ -7,6 +7,7 @@ let leftNote = null;
 let isDone = false;
 let currentHits = []; // 当前双手模式已击中的音符数组
 let wrongNote = null; // 存储用户弹错的那个音符对象
+let lastNoteM = null; // 上一个音符的MIDI值，用于避免重复
 
 // 手动范围存储 (MIDI 值)
 let customMin = 60;
@@ -24,8 +25,35 @@ const sOk = document.getElementById('sOk');
 const sSt = document.getElementById('sSt');
 const sAl = document.getElementById('sAl');
 
-function pickNote(lo, hi) {
-  const ns = NOTES_DATA.filter(n => n.m >= lo && n.m <= hi);
+// Toast 弹窗函数
+function showToast(message, type = 'info', duration = 1200) {
+  // 移除已存在的 toast
+  const existing = document.querySelector('.toast-popup');
+  if (existing) existing.remove();
+
+  const toast = document.createElement('div');
+  toast.className = `toast-popup toast-${type}`;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+
+  // 触发显示动画
+  requestAnimationFrame(() => {
+    toast.classList.add('show');
+  });
+
+  // 自动消失
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 300);
+  }, duration);
+}
+
+function pickNote(lo, hi, avoidM = null) {
+  let ns = NOTES_DATA.filter(n => n.m >= lo && n.m <= hi);
+  // 避免重复：如果可选音符多于1个，且有避免值，则过滤掉
+  if (avoidM !== null && ns.length > 1) {
+    ns = ns.filter(n => n.m !== avoidM);
+  }
   return ns[Math.floor(Math.random() * ns.length)];
 }
 
@@ -44,6 +72,9 @@ function generateStage() {
   wrongNote = null; // 清空上一局的错误记录
   fb.textContent = '';
   fb.className = 'fb';
+  currentHits = []; // 重置当前已击中列表
+
+  // 立即清除键盘高亮
   clearPianoKeysClasses();
 
   // 根据难度决定生成的音符范围
@@ -68,13 +99,19 @@ function generateStage() {
   const candidatesRH = NOTES_DATA.filter(x => x.m >= minRH && x.m <= maxRH && (includeAccid || x.b === 0));
   const candidatesLH = NOTES_DATA.filter(x => x.m >= minLH && x.m <= maxLH && (includeAccid || x.b === 0));
 
+  // 避免重复：过滤掉与上次相同的音符
+  const filteredRH = lastNoteM !== null ? candidatesRH.filter(n => n.m !== lastNoteM) : candidatesRH;
+  const filteredLH = lastNoteM !== null ? candidatesLH.filter(n => n.m !== lastNoteM) : candidatesLH;
+
   if (mode === 'rh') {
-    rightNote = candidatesRH[Math.floor(Math.random() * candidatesRH.length)];
+    rightNote = filteredRH.length > 0 ? filteredRH[Math.floor(Math.random() * filteredRH.length)] : candidatesRH[Math.floor(Math.random() * candidatesRH.length)];
     leftNote = null;
+    lastNoteM = rightNote ? rightNote.m : null;
     // hint.textContent = '🎵 请认出该音符在高音谱表上的位置并弹出';
   } else {
-    leftNote = candidatesLH[Math.floor(Math.random() * candidatesLH.length)];
+    leftNote = filteredLH.length > 0 ? filteredLH[Math.floor(Math.random() * filteredLH.length)] : candidatesLH[Math.floor(Math.random() * candidatesLH.length)];
     rightNote = null;
+    lastNoteM = leftNote ? leftNote.m : null;
     // hint.textContent = '🎵 请认出该音符在低音谱表上的位置并弹出';
   }
 
@@ -126,30 +163,20 @@ function handleKeyTap(e, m) {
   const expectedNotes = [rightNote, leftNote].filter(n => n !== null);
   const target = expectedNotes.find(t => t.m === m);
 
-  // 发出声音反馈
-  playNoteSound(m);
-
   if (!target) {
-    // 弹错了：立即结束本轮
+    // 弹错了
     score.streak = 0;
+    score.total++;
     isDone = true;
-    lockPianoKeys();
-    highlightKey(m, 'wh');
-    expectedNotes.forEach(t => highlightKey(t.m, 'ch'));
 
-    // 记录弹错的那个音，用于在谱面上绘制显示
-    wrongNote = NOTES_DATA.find(n => n.m === m);
+    // 显示错误 toast
+    showToast('❌ 错误！答案是 ' + expectedNotes.map(t => t.displayName).join(' / '), 'wrong', 1500);
 
-    highlightKey(m, 'wh');
-    expectedNotes.forEach(t => highlightKey(t.m, 'ch'));
-
-    fb.textContent = '❌ 弹错了，标准答案是 ' + expectedNotes.map(t => t.displayName).join(' 与 ');
-    fb.className = 'fb no';
-    renderCanvas('no');
-    if (gameTimer) clearTimeout(gameTimer);
-    gameTimer = setTimeout(generateStage, 900);
+    // 立即生成下一题（更新 lastNoteM 避免重复）
+    lastNoteM = expectedNotes[0] ? expectedNotes[0].m : null;
+    setTimeout(generateStage, 600);
   } else {
-    // 弹对了其中一个
+    // 弹对了
     if (!currentHits.find(h => h.m === m)) {
       currentHits.push(target);
       highlightKey(m, 'ch');
@@ -163,17 +190,15 @@ function handleKeyTap(e, m) {
       score.streak++;
       if (score.streak > score.maxStreak) score.maxStreak = score.streak;
 
-      const msgs = ['✅ 正确！', '🎉 太棒了！', '✨ 漂亮！', '👏 完全正确！'];
-      fb.textContent = msgs[Math.floor(Math.random() * msgs.length)] + ' ' + expectedNotes.map(t => t.displayName).join(' ');
-      fb.className = 'fb ok';
+      // 显示正确 toast
+      showToast('✅ 正确! ' + expectedNotes.map(t => t.displayName).join(' / '), 'ok', 800);
 
-      renderCanvas('ok');
-      if (gameTimer) clearTimeout(gameTimer);
-      gameTimer = setTimeout(generateStage, 900);
+      // 记录正确答案并立即生成下一题
+      lastNoteM = expectedNotes[0] ? expectedNotes[0].m : null;
+      setTimeout(generateStage, 500);
     } else {
       // 还在等待另一个音
-      fb.textContent = '🎹 还有一个音！加油...';
-      fb.className = 'fb';
+      showToast('🎹 还有一个音...', 'info', 600);
     }
   }
 
